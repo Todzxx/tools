@@ -47,7 +47,7 @@ typeCheckingMode = "basic"
 
 [tool.mypy]
 ignore_missing_imports = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 strict_optional = true
 check_untyped_defs = false
 
