@@ -1,0 +1,47 @@
+[project]
+name = "network-inventory"
+version = "0.1.0"
+description = "Legal local network inventory and device mapping CLI."
+requires-python = ">=3.12"
+dependencies = [
+  "bleak",
+  "mac-vendor-lookup",
+  "onvif-zeep",
+  "pywifi",
+  "python-nmap",
+  "requests",
+  "rich",
+  "scapy",
+  "zeroconf",
+  "dnspython",
+  "pydantic",
+  "typer[all]",
+  "pyyaml",
+  "pysnmp",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "ruff",
+  "mypy",
+]
+
+[project.scripts]
+network-inventory = "network_inventory.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["E501"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+
