@@ -8,28 +8,12 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich.live import Live
 
-from network_inventory.models import ScanResult
-from network_inventory.scanner.engine import ScannerEngine
 from network_inventory.utils.logger import setup_logger
-from network_inventory.utils.progress import ProgressManager
 from network_inventory.utils.dependencies import DependencyChecker
 from network_inventory.utils.permissions import PermissionChecker
-from network_inventory.utils.config import ConfigManager, AppConfig
-from network_inventory.exporters.csv_exporter import export_csv
-from network_inventory.exporters.json_exporter import export_json
-from network_inventory.exporters.html_exporter import export_html
-from network_inventory.exporters.topology_exporter import TopologyExporter
 
-
-app = typer.Typer(
-    help="Professional Network Inventory & Mapping Tool",
-    add_completion=True,
-    rich_markup_mode="rich",
-)
-
-console = Console()
+VERSION = "0.8.0"
 
 DEVICE_STYLE: dict[str, str] = {
     "Router": "bold yellow",
@@ -50,8 +34,20 @@ DEVICE_STYLE: dict[str, str] = {
     "Unknown": "dim white",
 }
 
+if "--version" in sys.argv:
+    print(f"network-inventory v{VERSION}")
+    sys.exit(0)
 
-def display_summary_table(result: ScanResult) -> None:
+app = typer.Typer(
+    help="Professional Network Inventory & Mapping Tool",
+    add_completion=True,
+    rich_markup_mode="rich",
+)
+
+console = Console()
+
+
+def display_summary_table(result) -> None:
     table = Table(
         title=f"Scan Result: {result.target}",
         show_header=True,
@@ -99,6 +95,8 @@ def scan(
     """
     Perform a complete network scan and map all discovered devices.
     """
+    from network_inventory.utils.config import ConfigManager
+
     logger = setup_logger()
 
     cfg_manager = ConfigManager(config_file)
@@ -139,6 +137,10 @@ def scan(
             "[yellow]  Set custom credentials via --config or config.yaml.[/yellow]"
         )
 
+    from network_inventory.scanner.engine import ScannerEngine
+    from network_inventory.utils.progress import ProgressManager
+    from rich.live import Live
+
     progress_manager = ProgressManager()
     engine = ScannerEngine(logger, progress_manager)
 
@@ -153,7 +155,6 @@ def scan(
                     progress_manager._live = live
                     return await engine.run(target, options)
             except UnicodeEncodeError:
-                # Fallback if terminal cannot render Unicode spinners
                 with Live(
                     progress_manager.get_renderable(),
                     refresh_per_second=2,
@@ -188,6 +189,9 @@ def scan(
             f"[bold green]Scan Complete:[/bold green] Found {len(result.devices)} devices."
         )
 
+    from network_inventory.exporters.csv_exporter import export_csv
+    from network_inventory.exporters.json_exporter import export_json
+
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -199,6 +203,8 @@ def scan(
     console.print(f"Results exported to [cyan]{output_dir}[/cyan]")
 
     if options.get("output_html", True):
+        from network_inventory.exporters.html_exporter import export_html
+
         html_path = output_dir / "scan_result.html"
         export_html(result, html_path)
         console.print(f"HTML report saved to [cyan]{html_path}[/cyan]")
@@ -301,9 +307,13 @@ def export(
         )
 
     if format.lower() == "csv":
+        from network_inventory.exporters.csv_exporter import export_csv
+
         export_csv(mock_result, output.with_suffix(".csv"))
         console.print(f"Exported to [cyan]{output.with_suffix('.csv')}[/cyan]")
     elif format.lower() == "json":
+        from network_inventory.exporters.json_exporter import export_json
+
         export_json(mock_result, output.with_suffix(".json"))
         console.print(f"Exported to [cyan]{output.with_suffix('.json')}[/cyan]")
     else:
@@ -320,11 +330,11 @@ def map(
     """
     from network_inventory.storage.database import ScanDatabase
     from network_inventory.models import ScanResult, DeviceRecord
+    from network_inventory.exporters.topology_exporter import TopologyExporter
 
     db = ScanDatabase(db_path)
     db.open()
 
-    # Get the latest scan to get the real target CIDR
     last_scan_id = db.get_last_scan_id()
     if not last_scan_id:
         console.print("[yellow]No scans found in database. Run a scan first.[/yellow]")
@@ -450,6 +460,8 @@ def init_config():
     """
     Generate a default config.yaml file.
     """
+    from network_inventory.utils.config import ConfigManager, AppConfig
+
     path = ConfigManager.get_default_path()
     if path.exists():
         if not typer.confirm(f"{path} already exists. Overwrite?"):
