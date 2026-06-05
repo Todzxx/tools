@@ -36,6 +36,9 @@ results/
 config.yaml
 scan_history.db
 
+# Test artifacts
+final_test.txt
+
 # Logs
 network_inventory/logs/*.log
 logs/
