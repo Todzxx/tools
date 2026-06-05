@@ -15,7 +15,7 @@ dependencies = [
   "zeroconf",
   "dnspython",
   "pydantic",
-  "typer[all]",
+  "typer",
   "pyyaml",
   "pysnmp",
 ]
