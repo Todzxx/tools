@@ -13,7 +13,7 @@ class PermissionChecker:
         """Returns True if the current user has administrative/root privileges."""
         try:
             if platform.system() == "Windows":
-                return ctypes.windll.shell32.IsUserAnAdmin() != 0
+                return ctypes.windll.shell32.IsUserAnAdmin() != 0  # type: ignore[attr-defined]
             else:
                 return os.getuid() == 0  # type: ignore[attr-defined]
         except Exception:
