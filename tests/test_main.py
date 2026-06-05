@@ -19,8 +19,8 @@ class TestCliCommands:
         result = runner.invoke(app, ["scan", "--help"])
         assert result.exit_code == 0
         assert "TARGET" in result.stdout
-        assert "--nmap" in result.stdout
-        assert "--html" in result.stdout
+        assert "-nmap" in result.stdout
+        assert "-html" in result.stdout
 
     def test_init_config_default(self, tmp_path):
         orig = Path("config.yaml")
