@@ -6,7 +6,48 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  PYTHON_VERSION: "3.13"
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check network_inventory/
+
+      - name: Verify formatting
+        run: ruff format --check network_inventory/
+
+  typecheck:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Type check with mypy
+        run: mypy network_inventory/
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -20,6 +61,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y nmap
@@ -27,14 +69,28 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
 
-      - name: Lint with ruff
-        run: ruff check network_inventory/
-
-      - name: Type check with mypy
-        run: mypy network_inventory/ || true
-
       - name: Test with pytest
         run: python -m pytest tests/ -v --timeout=30
 
       - name: Verify CLI
         run: network-inventory --help
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit
