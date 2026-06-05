@@ -1,26 +1,26 @@
 # Network Inventory
 
-Multi-engine network scanner dan device inventory CLI. Menemukan dan mengklasifikasikan perangkat di jaringan lokal menggunakan ARP, ICMP, TCP sweep, mDNS, SSDP, Nmap, DHCP lease scraping, SNMP, NetBIOS, dan IPv6 Neighbor Discovery — tanpa agen.
+A multi-engine network scanner and device inventory CLI that discovers and classifies devices on your local network. It uses ARP, ICMP, TCP sweeps, mDNS, SSDP, Nmap, DHCP lease scraping, SNMP, NetBIOS, and IPv6 Neighbor Discovery — no agents required.
 
-**Bahasa:** ID · [EN](README.en.md)
+[ID](README.id.md)
 
-## Fitur
+## Features
 
-| Kategori | Fitur |
-|----------|-------|
-| **Discovery** | ARP per-IP (256× paralel), ICMP ping, TCP sweep (16 port), Nmap -sn -O, mDNS/Zeroconf (12+ service types), SSDP + UPnP description, DHCP lease scraping (SNMP/HTTP/TP-Link/OpenWrt/Huawei/ZTE), IPv6 Neighbor Discovery, SNMP v2c probe, NetBIOS name query |
-| **Passive** | Wi-Fi scan (pywifi), Bluetooth/BLE (bleak), ONVIF camera probe |
-| **Fingerprinting** | Device type (40+ rule: port + vendor → Samsung, iPhone, Router, Printer, CCTV, dll), OS detection (TTL + banner SSH/HTTP/FTP + keyword), MAC OUI vendor lookup, TLS certificate inspection, service version detection |
-| **Output** | Rich console table (`--pretty`), JSON, CSV, HTML dashboard (dark theme), Mermaid topology map, SQLite history |
-| **Monitoring** | Scan diff (device baru/hilang/berubah antar scan), web dashboard real-time |
-| **CLI** | Progress bar live, client isolation diagnosis, timeout control, concurrent 128-worker |
+| Category | Feature |
+|----------|---------|
+| **Discovery** | ARP per-IP (256× parallel), ICMP ping, TCP sweep (16 ports), Nmap -sn -O, mDNS/Zeroconf (12+ service types), SSDP + UPnP descriptions, DHCP lease scraping (SNMP/HTTP/TP-Link/OpenWrt/Huawei/ZTE), IPv6 Neighbor Discovery, SNMP v2c probe, NetBIOS name queries |
+| **Passive** | Wi-Fi scanning (pywifi), Bluetooth/BLE (bleak), ONVIF camera probing |
+| **Fingerprinting** | Device type detection (40+ rules: port signatures + vendor patterns → Samsung, iPhone, Router, Printer, CCTV, etc.), OS detection (TTL + SSH/HTTP/FTP banners + keywords), MAC OUI vendor lookup, TLS certificate inspection, service version detection |
+| **Output** | Rich console tables (`--pretty`), JSON, CSV, HTML dashboard (dark theme), Mermaid topology maps, SQLite history |
+| **Monitoring** | Scan diff (new, removed, and changed devices between scans), live web dashboard |
+| **CLI** | Live progress bar, client isolation diagnosis, configurable timeouts, concurrent 128-worker architecture |
 
-## Instalasi
+## Installation
 
-### Persyaratan
+### Prerequisites
 - Python ≥ 3.12
-- Npcap (untuk ARP via Scapy) — [npcap.com](https://npcap.com)
-- Nmap (opsional, untuk `--nmap`) — [nmap.org](https://nmap.org)
+- Npcap (required for ARP via Scapy) — [npcap.com](https://npcap.com)
+- Nmap (optional, for `--nmap`) — [nmap.org](https://nmap.org)
 
 ### Setup
 
@@ -30,7 +30,8 @@ cd network-inventory
 pip install -e .
 ```
 
-Atau tanpa clone:
+Or directly from a local folder:
+
 ```powershell
 pip install -e D:\TUGAS\tools
 ```
@@ -43,115 +44,115 @@ network-inventory [OPTIONS] COMMAND [ARGS]...
 
 ### Commands
 
-| Command | Deskripsi |
-|---------|-----------|
-| `scan` | Scan jaringan dan temukan semua perangkat |
-| `history` | Lihat riwayat scan sebelumnya dari database |
-| `export` | Export semua device dari database ke CSV/JSON |
-| `map` | Generate topology map (Mermaid) dari scan terakhir |
-| `diff` | Bandingkan dua scan — tunjukkan device baru/hilang/berubah |
-| `serve` | Jalankan web dashboard untuk browse hasil scan |
-| `init-config` | Generate file config.yaml default |
+| Command | Description |
+|---------|-------------|
+| `scan` | Scan the network and discover all devices |
+| `history` | View previous scan results from the database |
+| `export` | Export all devices from the database to CSV or JSON |
+| `map` | Generate a Mermaid topology map from the latest scan |
+| `diff` | Compare two scans — shows new, removed, and changed devices |
+| `serve` | Start a web dashboard to browse scan results |
+| `init-config` | Generate a default `config.yaml` file |
 
 ### `scan` Options
 
-| Flag | Default | Deskripsi |
-|------|---------|-----------|
-| `TARGET` | (required) | CIDR target, contoh: `192.168.1.0/24` |
-| `--nmap` | `False` | Gunakan Nmap -sn -O untuk host discovery |
-| `--dhcp` | `False` | Scrape daftar DHCP dari web UI router |
-| `--snmp` | `False` | Probe device via SNMP v2c |
-| `--ipv6` | `False` | IPv6 Neighbor Discovery |
-| `--html / --no-html` | `True` | Generate HTML report |
-| `--pretty / --no-pretty` | `True` | Tampilkan tabel Rich |
-| `--db / --no-db` | `True` | Simpan history ke SQLite |
-| `--timeout` | `2.0` | Timeout koneksi port (detik) |
-| `--config` | `config.yaml` | Path ke file konfigurasi YAML |
+| Flag | Default | Description |
+|------|---------|-------------|
+| `TARGET` | (required) | CIDR target, e.g. `192.168.1.0/24` |
+| `--nmap` | `False` | Use Nmap -sn -O for host discovery |
+| `--dhcp` | `False` | Scrape DHCP lease list from the router's web UI |
+| `--snmp` | `False` | Probe devices via SNMP v2c |
+| `--ipv6` | `False` | Enable IPv6 Neighbor Discovery |
+| `--html / --no-html` | `True` | Generate an HTML report |
+| `--pretty / --no-pretty` | `True` | Display Rich console tables |
+| `--db / --no-db` | `True` | Save results to the SQLite database |
+| `--timeout` | `2.0` | Port connection timeout in seconds |
+| `--config` | `config.yaml` | Path to the YAML configuration file |
 
-### Subcommands Detail
+### Subcommand Details
 
 #### `diff`
 ```powershell
 network-inventory diff [SCAN_A] [SCAN_B] [--db-path PATH]
 ```
-Bandingkan dua scan. Jika SCAN_A dan SCAN_B tidak diberikan, membandingkan 2 scan terakhir. Output: device baru (hijau), hilang (merah), berubah (kuning).
+Compares two scans. If `SCAN_A` and `SCAN_B` are omitted, it compares the last two scans. Outputs new (green), removed (red), and changed (yellow) devices.
 
 #### `serve`
 ```powershell
 network-inventory serve [--host 127.0.0.1] [--port 8080] [--db-path PATH]
 ```
-Jalankan web dashboard di browser. Tab: Devices, Scan History, Diff, Topology.
+Starts a web dashboard in your browser. Tabs: Devices, Scan History, Diff, Topology.
 
 #### `history`
 ```powershell
 network-inventory history [--db-path PATH] [--limit 10]
 ```
-Tampilkan statistik dan daftar device dari database SQLite.
+Displays statistics and the device list from the SQLite database.
 
 #### `export`
 ```powershell
 network-inventory export [--format csv|json] [--output FILE] [--db-path PATH]
 ```
-Export semua device dari database ke file CSV atau JSON.
+Exports all devices from the database to a CSV or JSON file.
 
 #### `map`
 ```powershell
 network-inventory map [--db-path PATH] [--output FILE.mmd]
 ```
-Generate file Mermaid topology map dari scan terakhir. Buka di [mermaid.live](https://mermaid.live) untuk visualisasi.
+Generates a Mermaid topology map file from the latest scan. Open it at [mermaid.live](https://mermaid.live) to visualize.
 
 #### `init-config`
 ```powershell
 network-inventory init-config
 ```
-Buat file `config.yaml` default di direktori saat ini.
+Creates a default `config.yaml` in the current directory.
 
-## Contoh Penggunaan
+## Usage Examples
 
 ```powershell
-# Scan dasar
+# Basic scan
 network-inventory scan 192.168.1.0/24
 
-# Scan lengkap dengan semua engine
+# Full scan with all engines enabled
 network-inventory scan 192.168.1.0/24 --nmap --dhcp --snmp --ipv6
 
-# Quick scan (hanya ARP + ICMP + TCP)
+# Quick scan (ARP + ICMP + TCP only)
 network-inventory scan 192.168.1.0/24 --timeout 1.0
 
-# Scan + simpan history + HTML report
+# Scan with history and HTML report
 network-inventory scan 192.168.1.0/24 --html
 
-# Lihat perbedaan antara 2 scan terakhir
+# View differences between the last two scans
 network-inventory diff
 
-# Buka web dashboard
+# Start the web dashboard
 network-inventory serve
 
-# Generate topology map
+# Generate a topology map
 network-inventory map
 
-# Export database
+# Export the database
 network-inventory export --format json
 ```
 
-## Pipeline Discovery
+## Discovery Pipeline
 
 ```
                      ┌──────────────┐
-                     │   ARP per-IP  │ ← 256 request paralel
+                     │   ARP per-IP  │ ← 256 parallel requests
                      └──────┬───────┘
                             │
                ┌────────────┼────────────┐
                ▼            ▼            ▼
          ┌──────────┐ ┌──────────┐ ┌──────────┐
-         │ ICMP ping│ │TCP sweep │ │ Dhcp     │
-         │ (system) │ │(16 port) │ │ scrape   │
+         │ ICMP ping│ │TCP sweep │ │ DHCP     │
+         │ (system) │ │(16 ports)│ │ scrape   │
          └──────────┘ └──────────┘ └──────────┘
                │            │            │
                └────────────┼────────────┘
                             ▼
                      ┌──────────────┐
-                     │  IPv6 ND     │ ← jika --ipv6
+                     │  IPv6 ND     │ ← if --ipv6 is set
                      └──────┬───────┘
                             ▼
                ┌──────────────────────┐
@@ -172,86 +173,86 @@ network-inventory export --format json
                └──────────────────────┘
 ```
 
-## Arsitektur
+## Architecture
 
 ```
 network_inventory/
-├── __init__.py           # Package exports (models, main)
-├── __main__.py           # `python -m network_inventory` entry
+├── __init__.py           # Package exports (models, main entry)
+├── __main__.py           # Enables `python -m network_inventory`
 ├── main.py               # CLI (Typer), 7 commands
-├── models.py             # Pydantic models (DeviceRecord, ScanResult, dll.)
+├── models.py             # Pydantic models (DeviceRecord, ScanResult, etc.)
 │
 ├── scanner/              # Discovery engines
-│   ├── engine.py         # Orchestrator — 10 stages berurutan
-│   ├── arp_scanner.py    # ARP via Scapy + system arp -a
-│   ├── ipv6_scanner.py   # IPv6 ND cache reader
+│   ├── engine.py         # Orchestrator — runs 10 sequential stages
+│   ├── arp_scanner.py    # ARP via Scapy + system arp -a fallback
+│   ├── ipv6_scanner.py   # IPv6 neighbor discovery cache reader
 │   ├── nmap_scanner.py   # Nmap -sn -O wrapper
-│   ├── port_scanner.py   # Port scanning (50 port umum)
-│   ├── router_scanner.py # DHCP lease scraper (multi-vendor)
+│   ├── port_scanner.py   # Port scanner (50 common ports)
+│   ├── router_scanner.py # DHCP lease scraper (multi-vendor support)
 │   ├── mdns_scanner.py   # Zeroconf/mDNS (12+ service types)
 │   ├── ssdp_scanner.py   # SSDP/UPnP discovery
 │   ├── onvif_scanner.py  # ONVIF camera probe
-│   ├── bluetooth_scanner.py  # BLE via bleak
-│   ├── wifi_scanner.py   # Wi-Fi via pywifi
-│   ├── snmp_scanner.py   # SNMP v2c probe
-│   ├── netbios_scanner.py    # NetBIOS name query
-│   └── service_detector.py   # Service version grabber
+│   ├── bluetooth_scanner.py  # BLE scanning via bleak
+│   ├── wifi_scanner.py   # Wi-Fi scanning via pywifi
+│   ├── snmp_scanner.py   # SNMP v2c probing
+│   ├── netbios_scanner.py    # NetBIOS name queries
+│   └── service_detector.py   # Service version detection
 │
-├── detectors/            # Klasifikasi & fingerprinting
-│   ├── device_classifier.py  # 40+ rule: port + vendor → device type
-│   ├── os_detector.py        # TTL + banner + keyword OS
+├── detectors/            # Classification and fingerprinting
+│   ├── device_classifier.py  # 40+ rules: port + vendor patterns → device type
+│   ├── os_detector.py        # TTL + banner + keyword OS detection
 │   └── vendor_detector.py    # MAC OUI lookup
 │
 ├── exporters/            # Output formatters
 │   ├── json_exporter.py
 │   ├── csv_exporter.py
-│   ├── html_exporter.py      # Dark theme HTML dashboard
-│   ├── topology_exporter.py  # Mermaid topology diagram
-│   └── web_server.py         # Built-in web UI (serve)
+│   ├── html_exporter.py      # Dark-themed HTML dashboard
+│   ├── topology_exporter.py  # Mermaid topology diagrams
+│   └── web_server.py         # Built-in web UI (serve command)
 │
 ├── storage/
-│   └── database.py           # SQLite (scans, devices, device_history)
+│   └── database.py           # SQLite database (scans, devices, device_history)
 │
 └── utils/
-    ├── config.py         # Pydantic config (YAML load/save)
-    ├── logger.py         # File + console logger
+    ├── config.py         # Pydantic configuration (YAML load/save)
+    ├── logger.py         # File and console logger
     ├── progress.py       # Rich live progress bar manager
-    ├── dependencies.py   # Nmap/Npcap checker
-    ├── permissions.py    # Admin check
+    ├── dependencies.py   # Nmap and Npcap availability checker
+    ├── permissions.py    # Administrative privileges checker
     ├── dns_utils.py      # Reverse DNS lookup
-    └── tls_utils.py      # TLS certificate fetch
+    └── tls_utils.py      # TLS certificate retrieval
 ```
 
 ## SQLite Database
 
-Database menyimpan riwayat perangkat antar scan di `scan_history.db`:
+The database stores device history across scans in `scan_history.db`:
 
-| Tabel | Isi |
-|-------|-----|
-| `scans` | Setiap sesi scan (id UUID, target, timestamp, device_count) |
-| `devices` | Data perangkat unik per MAC (first_seen, last_seen, seen_count, IP terakhir, type, OS, vendor) |
-| `device_history` | Riwayat perubahan per scan (IP, hostname, device_type, open_ports) |
+| Table | Contents |
+|-------|----------|
+| `scans` | Each scan session (UUID id, target, timestamp, device_count) |
+| `devices` | Unique device per MAC address (first_seen, last_seen, seen_count, last IP, type, OS, vendor) |
+| `device_history` | Per-scan change log (IP, hostname, device_type, open_ports) |
 
-Fitur diff membandingkan `device_history` antar dua scan ID untuk menentukan device yang baru, hilang, atau berubah.
+The diff feature compares `device_history` entries between two scan IDs to determine which devices are new, removed, or changed.
 
 ## Web Dashboard
 
-Jalankan web UI untuk browse hasil scan di browser:
+Start a web UI to browse scan results in your browser:
 
 ```powershell
 network-inventory serve
 # → http://127.0.0.1:8080
 ```
 
-Tab:
-- **Devices** — Semua device yang pernah terdeteksi
-- **Scan History** — Riwayat semua scan
-- **Diff** — Perubahan device antar 2 scan terakhir
-- **Topology** — Topologi jaringan (hub-and-spoke)
+Tabs:
+- **Devices** — All devices ever detected
+- **Scan History** — All past scan sessions
+- **Diff** — Device changes between the last two scans
+- **Topology** — Network topology visualized as a hub-and-spoke graph
 
-## Konfigurasi YAML
+## YAML Configuration
 
-File `config.yaml` memungkinkan konfigurasi persisten:
+Persistent configuration via `config.yaml`:
 
 ```yaml
 scanner:
@@ -274,73 +275,74 @@ router:
 output_dir: results
 ```
 
-Generate default: `network-inventory init-config`
+Generate the default configuration:
+
+```powershell
+network-inventory init-config
+```
 
 ## Platform Notes
 
 ### Windows
-- **Npcap diperlukan** untuk ARP via Scapy. Install dari [npcap.com](https://npcap.com) dengan opsi "Install in WinPcap API‑compatible Mode".
-- **ICMP** menggunakan `ping -n 1` (system fallback, tanpa perlu admin).
-- **Nmap** (opsional) harus terinstall dan terdaftar di PATH.
-- Gunakan **Windows Terminal** (bukan cmd.exe) untuk hasil progress bar terbaik.
-- Jika `network-inventory` command tidak dikenali, jalankan via path lengkap:
+- **Npcap is required** for ARP via Scapy. Download it from [npcap.com](https://npcap.com) and enable "Install in WinPcap API‑compatible Mode" during installation.
+- **ICMP** uses `ping -n 1` (system fallback, no administrator privileges required).
+- **Nmap** (optional) must be installed and available on your PATH.
+- For the best progress bar experience, use **Windows Terminal** rather than the legacy cmd.exe.
+- If the `network-inventory` command is not recognized, run it using the full path:
   ```powershell
   & "C:\Users\<user>\AppData\Local\Programs\Python\Python313\Scripts\network-inventory.exe"
   ```
 
 ### Linux / macOS
 ```bash
-# Tambahkan sudo untuk ARP via Scapy
+# ARP via Scapy requires elevated privileges
 sudo network-inventory scan 192.168.1.0/24
 ```
 
 ### Client Isolation
-Jika hanya < 3 perangkat yang ditemukan (router + laptop sendiri), kemungkinan AP/client isolation aktif. Solusi:
-1. Gunakan kabel LAN
-2. Scan dari router (SSH ke router, jalankan `arp -a`)
-3. Matikan AP isolation di web UI router
+If fewer than 3 devices are discovered (only the router and your own machine), AP/client isolation is likely enabled. Try the following:
+1. Connect via an Ethernet cable
+2. Run the scan from the router itself (SSH in and execute `arp -a`)
+3. Disable AP isolation in your router's web interface
 
 ## Dependencies
 
-| Package | Untuk |
-|---------|-------|
+| Package | Purpose |
+|---------|---------|
 | `scapy` | ARP packet injection |
-| `rich` | Console table + progress bar |
-| `mac-vendor-lookup` | MAC OUI → vendor name |
+| `rich` | Console tables and progress bars |
+| `mac-vendor-lookup` | MAC OUI to vendor name resolution |
 | `zeroconf` | mDNS service discovery |
-| `dnspython` | DNS resolver |
-| `requests` | HTTP untuk DHCP scraper, UPnP, TLS |
-| `python-nmap` | Nmap wrapper |
+| `dnspython` | DNS resolution |
+| `requests` | HTTP requests for DHCP scraping, UPnP, and TLS |
+| `python-nmap` | Nmap integration |
 | `bleak` | Bluetooth/BLE discovery |
-| `onvif-zeep` | ONVIF camera probe |
-| `pywifi` | Wi-Fi scan |
-| `pysnmp` | SNMP v2c probe |
-| `pydantic` | Data modeling & config |
+| `onvif-zeep` | ONVIF camera probing |
+| `pywifi` | Wi-Fi scanning |
+| `pysnmp` | SNMP v2c probing |
+| `pydantic` | Data modeling and configuration |
 | `typer` | CLI framework |
-| `pyyaml` | Config file parser |
+| `pyyaml` | YAML configuration file parsing |
 
-## Pengembangan
+## Development
 
 ```powershell
-# Setup dev dependencies
+# Install development dependencies
 pip install -e ".[dev]"
 
-# Lint
+# Lint the codebase
 ruff check network_inventory/
 
-# Test
-python -m pytest tests/ -v
-
-# Test (65 test)
+# Run the test suite (65 tests)
 python -m pytest tests/ -q
 
-# Type check
+# Run type checks
 mypy network_inventory/
 
-# Verifikasi CLI
+# Verify the CLI
 network-inventory --help
 ```
 
-## Lisensi
+## License
 
 MIT
