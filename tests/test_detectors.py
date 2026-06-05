@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from network_inventory.detectors.device_classifier import classify_device
 from network_inventory.detectors.os_detector import infer_os_family
 from network_inventory.models import DeviceRecord
@@ -18,11 +16,14 @@ class TestDeviceClassifier:
 
     def test_router_by_open_ports(self):
         dev = DeviceRecord(ip_address="10.0.0.1", open_ports=[])
-        dev.open_ports = [type("Port", (), {"port": 443})(), type("Port", (), {"port": 80})()]
-        from network_inventory.detectors.device_classifier import ROUTER_PORTS
-        has_router_ports = any(p.port in {443, 80, 22, 23, 161} for p in dev.open_ports)
-        if has_router_ports:
-            pass
+        from network_inventory.models import PortInfo
+
+        dev.open_ports = [
+            PortInfo(port=443, service="https", open=True),
+            PortInfo(port=80, service="http", open=True),
+            PortInfo(port=53, service="dns", open=True),
+        ]
+        assert classify_device(dev) == "Router"
 
     def test_windows_by_vendor(self):
         dev = DeviceRecord(ip_address="10.0.0.2", vendor="Microsoft Corporation")

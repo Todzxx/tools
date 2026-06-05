@@ -11,6 +11,7 @@ class VendorDetector:
         self._loaded = False
         try:
             from mac_vendor_lookup import MacLookup
+
             self._lookup = MacLookup()
         except ImportError:
             self._logger.warning("mac-vendor-lookup is not installed")

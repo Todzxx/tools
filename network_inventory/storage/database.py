@@ -89,7 +89,13 @@ class ScanDatabase:
         self._conn.execute(
             "INSERT OR REPLACE INTO scans (id, target, started_at, finished_at, device_count) "
             "VALUES (?, ?, ?, ?, ?)",
-            (scan_id, result.target, result.started_at, result.finished_at, len(result.devices)),
+            (
+                scan_id,
+                result.target,
+                result.started_at,
+                result.finished_at,
+                len(result.devices),
+            ),
         )
 
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -104,9 +110,18 @@ class ScanDatabase:
                 "(scan_id, mac, ip_address, hostname, vendor, device_type, "
                 " os_family, ipv6_address, open_ports, seen_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (scan_id, mac, device.ip_address, device.hostname,
-                 device.vendor, device.device_type, device.os_family,
-                 device.ipv6_address, ports_json, now),
+                (
+                    scan_id,
+                    mac,
+                    device.ip_address,
+                    device.hostname,
+                    device.vendor,
+                    device.device_type,
+                    device.os_family,
+                    device.ipv6_address,
+                    ports_json,
+                    now,
+                ),
             )
 
             # Upsert device record
@@ -123,9 +138,17 @@ class ScanDatabase:
                     " last_vendor, last_device_type, last_os_family, "
                     " last_ipv6, seen_count) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
-                    (mac, now, now, device.ip_address, device.hostname,
-                     device.vendor, device.device_type, device.os_family,
-                     device.ipv6_address),
+                    (
+                        mac,
+                        now,
+                        now,
+                        device.ip_address,
+                        device.hostname,
+                        device.vendor,
+                        device.device_type,
+                        device.os_family,
+                        device.ipv6_address,
+                    ),
                 )
             else:
                 if existing["last_ip"] != device.ip_address:
@@ -138,40 +161,31 @@ class ScanDatabase:
                     "  last_device_type=?, last_os_family=?, last_ipv6=?, "
                     "  seen_count=seen_count+1 "
                     "WHERE mac=?",
-                    (now, device.ip_address, device.hostname,
-                     device.vendor, device.device_type, device.os_family,
-                     device.ipv6_address, mac),
+                    (
+                        now,
+                        device.ip_address,
+                        device.hostname,
+                        device.vendor,
+                        device.device_type,
+                        device.os_family,
+                        device.ipv6_address,
+                        mac,
+                    ),
                 )
 
-            changes.append({
-                "mac": mac,
-                "ip": device.ip_address,
-                "hostname": device.hostname,
-                "action": action,
-            })
+            changes.append(
+                {
+                    "mac": mac,
+                    "ip": device.ip_address,
+                    "hostname": device.hostname,
+                    "action": action,
+                }
+            )
 
         self._conn.commit()
         return scan_id, changes
 
     # ── Query helpers ─────────────────────────────────────────────────────
-
-    def get_device(self, mac: str) -> dict[str, Any] | None:
-        if not self._conn:
-            return None
-        row = self._conn.execute(
-            "SELECT * FROM devices WHERE mac = ?", (mac.upper(),)
-        ).fetchone()
-        return dict(row) if row else None
-
-    def get_history(self, mac: str, limit: int = 20) -> list[dict[str, Any]]:
-        if not self._conn:
-            return []
-        rows = self._conn.execute(
-            "SELECT * FROM device_history WHERE mac = ? "
-            "ORDER BY seen_at DESC LIMIT ?",
-            (mac.upper(), limit),
-        ).fetchall()
-        return [dict(r) for r in rows]
 
     def get_all_devices(self) -> list[dict[str, Any]]:
         if not self._conn:
@@ -181,26 +195,18 @@ class ScanDatabase:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def get_new_since(self, since: str) -> list[dict[str, Any]]:
-        """Return devices first_seen after *since* (ISO timestamp)."""
-        if not self._conn:
-            return []
-        rows = self._conn.execute(
-            "SELECT * FROM devices WHERE first_seen > ? ORDER BY first_seen DESC",
-            (since,),
-        ).fetchall()
-        return [dict(r) for r in rows]
-
     def get_stats(self) -> dict[str, Any]:
         if not self._conn:
             return {}
-        return dict(self._conn.execute(
-            "SELECT "
-            "  COUNT(*) AS total_devices, "
-            "  COUNT(DISTINCT last_device_type) AS device_types, "
-            "  MAX(last_seen) AS last_scan "
-            "FROM devices"
-        ).fetchone())
+        return dict(
+            self._conn.execute(
+                "SELECT "
+                "  COUNT(*) AS total_devices, "
+                "  COUNT(DISTINCT last_device_type) AS device_types, "
+                "  MAX(last_seen) AS last_scan "
+                "FROM devices"
+            ).fetchone()
+        )
 
     def get_last_scan_id(self) -> str | None:
         if not self._conn:
@@ -215,7 +221,8 @@ class ScanDatabase:
             return []
         rows = self._conn.execute(
             "SELECT id, target, started_at, finished_at, device_count "
-            "FROM scans ORDER BY started_at DESC LIMIT ?", (limit,)
+            "FROM scans ORDER BY started_at DESC LIMIT ?",
+            (limit,),
         ).fetchall()
         return [dict(r) for r in rows]
 

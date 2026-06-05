@@ -14,7 +14,7 @@ M_SEARCH = "\r\n".join(
     [
         "M-SEARCH * HTTP/1.1",
         "HOST: 239.255.255.250:1900",
-        "MAN: \"ssdp:discover\"",
+        'MAN: "ssdp:discover"',
         "MX: 2",
         "ST: ssdp:all",
         "",
@@ -32,7 +32,9 @@ def _parse_headers(payload: bytes) -> dict[str, str]:
     return headers
 
 
-def _fetch_device_description(location: str, timeout: float) -> tuple[str | None, str | None]:
+def _fetch_device_description(
+    location: str, timeout: float
+) -> tuple[str | None, str | None]:
     parsed = urlparse(location)
     if parsed.scheme not in {"http", "https"}:
         return None, None
@@ -56,10 +58,14 @@ def _fetch_device_description(location: str, timeout: float) -> tuple[str | None
     return find_text("manufacturer"), find_text("modelName")
 
 
-async def discover_ssdp(logger: logging.Logger, timeout: float = 3.0) -> list[SsdpDevice]:
+async def discover_ssdp(
+    logger: logging.Logger, timeout: float = 3.0
+) -> list[SsdpDevice]:
     def _discover() -> list[SsdpDevice]:
         devices: list[SsdpDevice] = []
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+        with socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
+        ) as sock:
             sock.settimeout(timeout)
             sock.sendto(M_SEARCH, SSDP_ADDR)
             while True:
@@ -71,7 +77,9 @@ async def discover_ssdp(logger: logging.Logger, timeout: float = 3.0) -> list[Ss
                 location = headers.get("LOCATION")
                 manufacturer, model = (None, None)
                 if location:
-                    manufacturer, model = _fetch_device_description(location, timeout=1.5)
+                    manufacturer, model = _fetch_device_description(
+                        location, timeout=1.5
+                    )
                 devices.append(
                     SsdpDevice(
                         location=location,

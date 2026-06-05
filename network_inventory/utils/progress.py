@@ -22,7 +22,7 @@ class ProgressManager:
         self._stages: dict[str, Any] = {}
         self._device_count = 0
         self._live: Any = None
-        
+
         # Overall progress
         self._overall = Progress(
             TextColumn("[bold cyan]{task.description}"),
@@ -38,16 +38,16 @@ class ProgressManager:
             SpinnerColumn(spinner_name="line"),
             TextColumn("[white]{task.description}"),
             BarColumn(bar_width=30) if has_bar else TextColumn(""),
-            TextColumn("[dim]{task.completed}/{task.total}[/]") if has_bar else TextColumn(""),
+            TextColumn("[dim]{task.completed}/{task.total}[/]")
+            if has_bar
+            else TextColumn(""),
             TextColumn("[green]{task.fields[info]}[/]"),
             TextColumn("[dim green]{task.fields[detail]}[/]"),
         )
-        task_id = p.add_task(label, total=total if has_bar else None, info="", detail="")
-        self._stages[key] = {
-            "progress": p,
-            "task_id": task_id,
-            "label": label
-        }
+        task_id = p.add_task(
+            label, total=total if has_bar else None, info="", detail=""
+        )
+        self._stages[key] = {"progress": p, "task_id": task_id, "label": label}
         self._update_overall()
 
     def update_progress(self, key: str, advance: int = 1) -> None:
@@ -88,27 +88,35 @@ class ProgressManager:
             self._live.update(self.get_renderable())
 
     def _update_overall(self) -> None:
-        completed = sum(1 for s in self._stages.values() if "[bold green]✓[/]" in s["progress"].tasks[s["task_id"]].description)
+        completed = sum(
+            1
+            for s in self._stages.values()
+            if "[bold green]✓[/]" in s["progress"].tasks[s["task_id"]].description
+        )
         total = max(len(self._stages), 1)
-        self._overall.update(self._overall_task, completed=int((completed / total) * 100))
+        self._overall.update(
+            self._overall_task, completed=int((completed / total) * 100)
+        )
 
     def get_renderable(self) -> Panel:
         group_items = [self._overall]
-        
+
         # Initial stages if none added yet
         if not self._stages:
             # Placeholder stages to show structure
             pass
-            
+
         for s in self._stages.values():
             group_items.append(s["progress"])
-            
-        footer = Text(f"[*] {self._device_count} devices discovered so far...", style="bold cyan")
+
+        footer = Text(
+            f"[*] {self._device_count} devices discovered so far...", style="bold cyan"
+        )
         group_items.append(footer)
 
         return Panel(
             Group(*group_items),
             title="[bold yellow]Network Inventory Progress[/]",
             border_style="blue",
-            padding=(1, 2)
+            padding=(1, 2),
         )

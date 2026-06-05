@@ -38,7 +38,9 @@ async def discover_ipv6_neighbors(
             existing = devices[mac_up]
             if not existing.ipv6_address:
                 existing.ipv6_address = ipv6
-            elif not ipv6.startswith("fe80") and existing.ipv6_address.startswith("fe80"):
+            elif not ipv6.startswith("fe80") and existing.ipv6_address.startswith(
+                "fe80"
+            ):
                 existing.ipv6_address = ipv6
 
     # ── 2. Ambil IPv6 address interface kita ──────────────────────────────
@@ -47,13 +49,14 @@ async def discover_ipv6_neighbors(
         for block in output.split("\r\n\r\n"):
             ipv6_matches = re.findall(
                 r"IPv6 Address[ .:]+([\da-f:]+(?:%\d+)?)",
-                block, re.IGNORECASE,
+                block,
+                re.IGNORECASE,
             )
             for ipv6 in ipv6_matches:
                 # Simpan sebagai catatan, bukan sebagai device
                 logger.debug("Our IPv6: %s", ipv6)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("ipconfig failed: %s", exc)
 
     # ── 3. Coba populasikan neighbor cache via ping ff02::1 ───────────────
     try:
@@ -77,6 +80,7 @@ async def discover_ipv6_neighbors(
 
 # ── System Neighbor Cache Reader ──────────────────────────────────────────────
 
+
 def _read_neighbor_cache(
     logger: logging.Logger,
 ) -> dict[str, tuple[str, str]]:
@@ -87,7 +91,8 @@ def _read_neighbor_cache(
         try:
             output = subprocess.check_output(
                 ["netsh", "interface", "ipv6", "show", "neighbors"],
-                text=True, timeout=5,
+                text=True,
+                timeout=5,
             )
         except Exception as exc:
             logger.debug("IPv6 neighbor cache read failed: %s", exc)
@@ -98,14 +103,15 @@ def _read_neighbor_cache(
         for line in output.splitlines():
             m = re.search(
                 r"\d+\s+"
-                r"([\da-f:]+(?:%\d+)?)\s+"            # IPv6 address
+                r"([\da-f:]+(?:%\d+)?)\s+"  # IPv6 address
                 r"([\da-fA-F]{2}[:\-][\da-fA-F]{2}[:\-][\da-fA-F]{2}"
                 r"[:\-][\da-fA-F]{2}[:\-][\da-fA-F]{2}[:\-][\da-fA-F]{2}|"
                 r"[\da-fA-F]{2}-[\da-fA-F]{2}-[\da-fA-F]{2}"
                 r"-[\da-fA-F]{2}-[\da-fA-F]{2}-[\da-fA-F]{2}|"
                 r"ff:ff:ff:ff:ff:ff)\s+"
-                r"(\S+)",                               # state
-                line, re.IGNORECASE,
+                r"(\S+)",  # state
+                line,
+                re.IGNORECASE,
             )
             if m:
                 ipv6 = m.group(1)
@@ -122,7 +128,9 @@ def _read_neighbor_cache(
         # Linux: ip -6 neigh
         try:
             output = subprocess.check_output(
-                ["ip", "-6", "neigh"], text=True, timeout=5,
+                ["ip", "-6", "neigh"],
+                text=True,
+                timeout=5,
             )
             for line in output.splitlines():
                 m = re.search(
@@ -138,13 +146,14 @@ def _read_neighbor_cache(
                     if state.lower() in ("reachable", "stale", "delay", "probe"):
                         if mac != "FF:FF:FF:FF:FF:FF" and mac not in result:
                             result[mac] = (ipv6, iface)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Linux IPv6 neighbor cache read failed: %s", exc)
 
     return result
 
 
 # ── IPv6 Multicast Ping ───────────────────────────────────────────────────────
+
 
 def _ping_multicast_ipv6(logger: logging.Logger) -> bool:
     """Ping ff02::1 to populate the neighbor cache (Windows only)."""
@@ -153,7 +162,8 @@ def _ping_multicast_ipv6(logger: logging.Logger) -> bool:
             # Find a suitable interface index
             output = subprocess.check_output(
                 ["netsh", "interface", "ipv6", "show", "interfaces"],
-                text=True, timeout=5,
+                text=True,
+                timeout=5,
             )
             # Pick the first non-loopback interface
             iface_idx = None
@@ -166,23 +176,35 @@ def _ping_multicast_ipv6(logger: logging.Logger) -> bool:
                         break
             if iface_idx:
                 subprocess.check_output(
-                    ["ping", "-6", "-n", "1", "-l", "0", "-w", "1000",
-                     f"ff02::1%{iface_idx}"],
-                    stderr=subprocess.STDOUT, timeout=3,
+                    [
+                        "ping",
+                        "-6",
+                        "-n",
+                        "1",
+                        "-l",
+                        "0",
+                        "-w",
+                        "1000",
+                        f"ff02::1%{iface_idx}",
+                    ],
+                    stderr=subprocess.STDOUT,
+                    timeout=3,
                 )
                 return True
         else:
             subprocess.check_output(
                 ["ping6", "-c", "1", "-w", "1", "ff02::1"],
-                stderr=subprocess.STDOUT, timeout=3,
+                stderr=subprocess.STDOUT,
+                timeout=3,
             )
             return True
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("IPv6 multicast ping failed: %s", exc)
     return False
 
 
 # ── Helper: guess IPv4 from MAC ───────────────────────────────────────────────
+
 
 def _find_v4_for_mac(mac: str, target_v4: str | None) -> str | None:
     """Try to find the IPv4 for a given MAC address from ``arp -a``."""

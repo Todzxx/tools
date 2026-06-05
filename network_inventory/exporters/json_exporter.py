@@ -12,4 +12,3 @@ def export_json(result: ScanResult, output_path: Path) -> None:
         json.dumps(result.to_dict(), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-

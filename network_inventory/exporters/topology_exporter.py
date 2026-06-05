@@ -14,16 +14,30 @@ class TopologyExporter:
         Creates a sophisticated Mermaid diagram with subgraphs and color-coded device types.
         """
         lines = ["graph TD"]
-        
+
         # 1. Professional Color Scheme
         lines.append("    %% Color Scheme Definitions")
-        lines.append("    classDef gateway fill:#f96,stroke:#333,stroke-width:3px,color:#000;")
-        lines.append("    classDef laptop fill:#dfd,stroke:#2e7d32,stroke-width:1px,color:#000;")
-        lines.append("    classDef smartphone fill:#e1f5fe,stroke:#0288d1,stroke-width:1px,color:#000;")
-        lines.append("    classDef printer fill:#fff9c4,stroke:#fbc02d,stroke-width:1px,color:#000;")
-        lines.append("    classDef cctv fill:#ffcdd2,stroke:#d32f2f,stroke-width:1px,color:#000;")
-        lines.append("    classDef server fill:#e1bee7,stroke:#7b1fa2,stroke-width:1px,color:#000;")
-        lines.append("    classDef unknown fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000;")
+        lines.append(
+            "    classDef gateway fill:#f96,stroke:#333,stroke-width:3px,color:#000;"
+        )
+        lines.append(
+            "    classDef laptop fill:#dfd,stroke:#2e7d32,stroke-width:1px,color:#000;"
+        )
+        lines.append(
+            "    classDef smartphone fill:#e1f5fe,stroke:#0288d1,stroke-width:1px,color:#000;"
+        )
+        lines.append(
+            "    classDef printer fill:#fff9c4,stroke:#fbc02d,stroke-width:1px,color:#000;"
+        )
+        lines.append(
+            "    classDef cctv fill:#ffcdd2,stroke:#d32f2f,stroke-width:1px,color:#000;"
+        )
+        lines.append(
+            "    classDef server fill:#e1bee7,stroke:#7b1fa2,stroke-width:1px,color:#000;"
+        )
+        lines.append(
+            "    classDef unknown fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000;"
+        )
 
         # 2. Identify Gateway
         gateway_ip = None
@@ -40,7 +54,7 @@ class TopologyExporter:
             "Mobile Devices": [],
             "Printers": [],
             "Smart Home & IoT": [],
-            "Others": []
+            "Others": [],
         }
 
         for dev in result.devices:
@@ -62,13 +76,19 @@ class TopologyExporter:
         for cat_name, devs in categories.items():
             if not devs:
                 continue
-            
+
             lines.append(f"\n    subgraph {cat_name.replace(' ', '_')} [ {cat_name} ]")
             for dev in devs:
                 node_id = dev.ip_address.replace(".", "_")
-                name = dev.hostname if dev.hostname and dev.hostname != "-" else dev.ip_address
-                label = f"<b>{name}</b><br/>{dev.ip_address}<br/><i>{dev.vendor or ''}</i>"
-                
+                name = (
+                    dev.hostname
+                    if dev.hostname and dev.hostname != "-"
+                    else dev.ip_address
+                )
+                label = (
+                    f"<b>{name}</b><br/>{dev.ip_address}<br/><i>{dev.vendor or ''}</i>"
+                )
+
                 # Assign Class
                 cls = "unknown"
                 dtype = dev.device_type
@@ -84,7 +104,7 @@ class TopologyExporter:
                     cls = "cctv"
                 elif dtype in ["NAS", "Plex Server"]:
                     cls = "server"
-                
+
                 lines.append(f'        {node_id}["{label}"]::: {cls}')
             lines.append("    end")
 

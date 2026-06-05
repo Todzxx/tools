@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -9,22 +10,22 @@ from network_inventory.models import ScanResult
 
 # ── Device-type colour map ─────────────────────────────────────────────────────
 DEVICE_COLOR: dict[str, str] = {
-    "Router":       "#f59e0b",
+    "Router": "#f59e0b",
     "Access Point": "#f59e0b",
-    "Windows PC":   "#3b82f6",
-    "Mac":          "#6366f1",
-    "Laptop":       "#3b82f6",
-    "Desktop":      "#3b82f6",
-    "Smartphone":   "#10b981",
-    "Android":      "#22c55e",
-    "iPhone":       "#6366f1",
-    "Printer":      "#8b5cf6",
-    "CCTV":         "#ef4444",
-    "NAS":          "#0ea5e9",
-    "Smart TV":     "#ec4899",
-    "Plex Server":  "#f97316",
-    "IoT":          "#14b8a6",
-    "Unknown":      "#6b7280",
+    "Windows PC": "#3b82f6",
+    "Mac": "#6366f1",
+    "Laptop": "#3b82f6",
+    "Desktop": "#3b82f6",
+    "Smartphone": "#10b981",
+    "Android": "#22c55e",
+    "iPhone": "#6366f1",
+    "Printer": "#8b5cf6",
+    "CCTV": "#ef4444",
+    "NAS": "#0ea5e9",
+    "Smart TV": "#ec4899",
+    "Plex Server": "#f97316",
+    "IoT": "#14b8a6",
+    "Unknown": "#6b7280",
 }
 
 _STYLE = """
@@ -92,12 +93,11 @@ def export_html(result: ScanResult, output_path: Path) -> None:
         except Exception:
             pass
 
-    # ── Devices table ─────────────────────────────────────────────────────────
     rows: list[str] = []
     for dev in result.devices:
         ports_html = "".join(
             f'<span class="port-chip">{p.port}/{html.escape(p.service)}'
-            + (f' <em>{html.escape(p.version)}</em>' if p.version else "")
+            + (f" <em>{html.escape(p.version)}</em>" if p.version else "")
             + "</span>"
             for p in dev.open_ports
         )
@@ -140,12 +140,9 @@ def export_html(result: ScanResult, output_path: Path) -> None:
         "<table><thead><tr>"
         "<th>IP</th><th>IPv6</th><th>MAC</th><th>Vendor</th><th>Hostname</th>"
         "<th>Type</th><th>OS</th><th>Open Ports</th><th>TLS</th><th>Notes</th>"
-        "</tr></thead><tbody>"
-        + "".join(rows)
-        + "</tbody></table>"
+        "</tr></thead><tbody>" + "".join(rows) + "</tbody></table>"
     )
 
-    # ── Wi-Fi table ────────────────────────────────────────────────────────────
     wifi_rows: list[str] = []
     for net in result.wifi_networks:
         enc_cls = _enc_class(net.encryption)
@@ -168,12 +165,9 @@ def export_html(result: ScanResult, output_path: Path) -> None:
             "<table><thead><tr>"
             "<th>SSID</th><th>BSSID</th><th>Channel</th>"
             "<th>Frequency</th><th>Signal</th><th>Encryption</th>"
-            "</tr></thead><tbody>"
-            + "".join(wifi_rows)
-            + "</tbody></table></section>"
+            "</tr></thead><tbody>" + "".join(wifi_rows) + "</tbody></table></section>"
         )
 
-    # ── Bluetooth table ────────────────────────────────────────────────────────
     bt_rows: list[str] = []
     for bt in result.bluetooth_devices:
         bt_rows.append(
@@ -191,10 +185,7 @@ def export_html(result: ScanResult, output_path: Path) -> None:
             "<tbody>" + "".join(bt_rows) + "</tbody></table></section>"
         )
 
-    # ── Summary stats ──────────────────────────────────────────────────────────
-    type_counts: dict[str, int] = {}
-    for dev in result.devices:
-        type_counts[dev.device_type] = type_counts.get(dev.device_type, 0) + 1
+    type_counts = Counter(dev.device_type for dev in result.devices)
     stat_chips = " ".join(
         f'<span class="wifi-badge">{_badge(t)} &times;{c}</span>'
         for t, c in sorted(type_counts.items())

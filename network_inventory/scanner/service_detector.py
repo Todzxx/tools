@@ -24,4 +24,3 @@ def enrich_service(port_info: PortInfo) -> PortInfo:
                 port_info.version = version
             break
     return port_info
-

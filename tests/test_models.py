@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 from network_inventory.models import (
-    BluetoothDevice, DeviceRecord, MdnsService, OnvifDevice,
-    PortInfo, ScanResult, SsdpDevice, TLSCertificateInfo, WifiNetwork,
+    BluetoothDevice,
+    DeviceRecord,
+    MdnsService,
+    OnvifDevice,
+    PortInfo,
+    ScanResult,
+    SsdpDevice,
+    TLSCertificateInfo,
+    WifiNetwork,
 )
 
 
@@ -113,7 +120,9 @@ class TestSsdpDevice:
         assert sd.location == "http://192.168.1.50:5000/description.xml"
 
     def test_minimal(self):
-        sd = SsdpDevice(location="http://10.0.0.1/desc.xml", server="Linux", st="test", usn="uuid:1")
+        sd = SsdpDevice(
+            location="http://10.0.0.1/desc.xml", server="Linux", st="test", usn="uuid:1"
+        )
         assert sd.server == "Linux"
 
 

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from network_inventory.utils.config import AppConfig, ConfigManager, RouterConfig, ScannerConfig
+from network_inventory.utils.config import (
+    AppConfig,
+    ConfigManager,
+    RouterConfig,
+    ScannerConfig,
+)
 
 
 class TestAppConfig:

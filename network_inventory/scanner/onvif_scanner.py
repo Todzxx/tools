@@ -43,10 +43,14 @@ def _extract_xaddrs(payload: bytes) -> list[str]:
     return xaddrs
 
 
-async def discover_onvif(logger: logging.Logger, timeout: float = 4.0) -> list[OnvifDevice]:
+async def discover_onvif(
+    logger: logging.Logger, timeout: float = 4.0
+) -> list[OnvifDevice]:
     def _discover_endpoints() -> list[str]:
         endpoints: set[str] = set()
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+        with socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
+        ) as sock:
             sock.settimeout(timeout)
             sock.sendto(_probe_message(), ONVIF_MULTICAST)
             while True:
@@ -66,6 +70,9 @@ async def discover_onvif(logger: logging.Logger, timeout: float = 4.0) -> list[O
     devices: list[OnvifDevice] = []
     for endpoint in endpoints:
         parsed = urlparse(endpoint)
-        devices.append(OnvifDevice(endpoint=endpoint, manufacturer=parsed.hostname, model="ONVIF camera"))
+        devices.append(
+            OnvifDevice(
+                endpoint=endpoint, manufacturer=parsed.hostname, model="ONVIF camera"
+            )
+        )
     return devices
-

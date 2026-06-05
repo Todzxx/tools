@@ -7,7 +7,9 @@ import threading
 from network_inventory.models import BluetoothDevice
 
 
-async def discover_bluetooth(logger: logging.Logger, timeout: float = 8.0) -> list[BluetoothDevice]:
+async def discover_bluetooth(
+    logger: logging.Logger, timeout: float = 8.0
+) -> list[BluetoothDevice]:
     try:
         from bleak import BleakScanner  # type: ignore[import]
     except ImportError:

@@ -36,8 +36,12 @@ async def scrape_dhcp_leases(
         def _snmp_arp() -> list[tuple[str, str, str | None]]:
             try:
                 from pysnmp.hlapi import (  # type: ignore[import]
-                    CommunityData, ContextData, ObjectType,
-                    ObjectIdentity, UdpTransportTarget, bulkCmd,
+                    CommunityData,
+                    ContextData,
+                    ObjectType,
+                    ObjectIdentity,
+                    UdpTransportTarget,
+                    bulkCmd,
                 )
             except ImportError:
                 return []
@@ -46,7 +50,9 @@ async def scrape_dhcp_leases(
                 iterator = bulkCmd(
                     CommunityData("public"),
                     UdpTransportTarget((gateway_ip, 161), timeout=2, retries=1),
-                    ContextData(), 0, 50,
+                    ContextData(),
+                    0,
+                    50,
                     ObjectType(ObjectIdentity("1.3.6.1.2.1.4.22.1.2")),
                     lookupMib=False,
                 )
@@ -60,12 +66,11 @@ async def scrape_dhcp_leases(
                         if len(parts) >= 3:
                             ip = ".".join(parts[-4:])
                             mac = ":".join(
-                                format(int(x, 16), "02x")
-                                for x in mac_hex.split(":")
+                                format(int(x, 16), "02x") for x in mac_hex.split(":")
                             )
                             results.append((ip, mac.upper(), None))
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("SNMP ARP walk failed: %s", exc)
             return results
 
         snmp_results = await asyncio.to_thread(_snmp_arp)
@@ -79,17 +84,26 @@ async def scrape_dhcp_leases(
     if devices:
         return devices
 
-    # ── 2. HTTP/HTTPS session ──────────────────────────────────────────────
     try:
         import requests
     except ImportError:
         return devices
 
     import urllib3
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     session = requests.Session()
+    session.verify = False
     session.headers.update({"User-Agent": "Mozilla/5.0"})
+
+    def _flush(
+        parsed: list[tuple[str, str, str | None]], label: str, source: str
+    ) -> list[DeviceRecord]:
+        for ip, mac, hn in parsed:
+            _add(ip, mac, hn)
+        logger.debug("%s %s → %d", label, source, len(parsed))
+        return devices
 
     for protocol in ("https", "http"):
         base = f"{protocol}://{gateway_ip}"
@@ -106,21 +120,18 @@ async def scrape_dhcp_leases(
         ]
         for url in legacy_urls:
             try:
-                resp = session.get(url, timeout=3, auth=(username, password), verify=False)
+                resp = session.get(url, timeout=3, auth=(username, password))
                 if resp.status_code == 200 and resp.text:
                     parsed = _parse_html_table(resp.text)
                     if parsed:
-                        for ip, mac, hn in parsed:
-                            _add(ip, mac, hn)
-                        logger.debug("TP-Link legacy %s → %d", url, len(parsed))
-                        return devices
-            except Exception:
-                continue
+                        return _flush(parsed, "TP-Link legacy", url)
+            except Exception as exc:
+                logger.debug("HTTP legacy URL %s failed: %s", url, exc)
 
         # ── 2b. TP-Link form login ──────────────────────────────────────────
         try:
             login_url = f"{base}/cgi-bin/luci/"
-            session.get(login_url, timeout=3, verify=False)
+            session.get(login_url, timeout=3)
             login_payloads = [
                 {"username": username, "password": password},
                 {"user": username, "pass": password},
@@ -129,8 +140,10 @@ async def scrape_dhcp_leases(
             for payload in login_payloads:
                 try:
                     login_resp = session.post(
-                        login_url, data=payload, timeout=3,
-                        allow_redirects=True, verify=False,
+                        login_url,
+                        data=payload,
+                        timeout=3,
+                        allow_redirects=True,
                     )
                     if login_resp.ok:
                         for du in [
@@ -139,23 +152,20 @@ async def scrape_dhcp_leases(
                             f"{base}/cgi-bin/luci/admin/status/device",
                         ]:
                             try:
-                                resp = session.get(du, timeout=3, verify=False)
+                                resp = session.get(du, timeout=3)
                                 if resp.status_code == 200:
                                     parsed = _parse_html_table(resp.text)
                                     if not parsed:
                                         parsed = _parse_json_list(resp.text)
                                     if parsed:
-                                        for ip, mac, hn in parsed:
-                                            _add(ip, mac, hn)
-                                        logger.debug("TP-Link new %s → %d", du, len(parsed))
-                                        return devices
-                            except Exception:
-                                continue
+                                        return _flush(parsed, "TP-Link new", du)
+                            except Exception as exc:
+                                logger.debug("LuCI data URL %s failed: %s", du, exc)
                         break
-                except Exception:
-                    continue
-        except Exception:
-            pass
+                except Exception as exc:
+                    logger.debug("LuCI login failed: %s", exc)
+        except Exception as exc:
+            logger.debug("LuCI section failed: %s", exc)
 
         # ── 2c. OpenWrt / LuCI ─────────────────────────────────────────────
         for url in (
@@ -163,16 +173,13 @@ async def scrape_dhcp_leases(
             f"{base}/cgi-bin/luci/admin/network/dhcp",
         ):
             try:
-                resp = session.get(url, timeout=3, auth=(username, password), verify=False)
+                resp = session.get(url, timeout=3, auth=(username, password))
                 if resp.status_code == 200:
                     parsed = _parse_html_table(resp.text)
                     if parsed:
-                        for ip, mac, hn in parsed:
-                            _add(ip, mac, hn)
-                        logger.debug("OpenWrt %s → %d", url, len(parsed))
-                        return devices
-            except Exception:
-                continue
+                        return _flush(parsed, "OpenWrt", url)
+            except Exception as exc:
+                logger.debug("OpenWrt %s failed: %s", url, exc)
 
         # ── 2d. Huawei / ZTE JSON API ──────────────────────────────────────
         for url in (
@@ -180,21 +187,19 @@ async def scrape_dhcp_leases(
             f"{base}/api/device/list",
         ):
             try:
-                resp = session.get(url, timeout=3, auth=(username, password), verify=False)
+                resp = session.get(url, timeout=3, auth=(username, password))
                 if resp.status_code == 200:
                     parsed = _parse_json_list(resp.text)
                     if parsed:
-                        for ip, mac, hn in parsed:
-                            _add(ip, mac, hn)
-                        logger.debug("JSON API %s → %d", url, len(parsed))
-                        return devices
-            except Exception:
-                continue
+                        return _flush(parsed, "JSON API", url)
+            except Exception as exc:
+                logger.debug("JSON API %s failed: %s", url, exc)
 
     return devices
 
 
 # ── Parsers ───────────────────────────────────────────────────────────────────
+
 
 def _parse_html_table(html: str) -> list[tuple[str, str, str | None]]:
     results: list[tuple[str, str, str | None]] = []
@@ -203,7 +208,8 @@ def _parse_html_table(html: str) -> list[tuple[str, str, str | None]]:
         r"<tr[^>]*>" + r"(?:.*?)<td[^>]*>(\d{1,3}(?:\.\d{1,3}){3})</td>"
         r"\s*<td[^>]*>([\da-fA-F:.-]{10,})</td>"
         r"\s*<td[^>]*>([^<]*)</td>",
-        html, re.IGNORECASE | re.DOTALL,
+        html,
+        re.IGNORECASE | re.DOTALL,
     )
     for ip, mac, hostname in rows:
         results.append((ip, mac, hostname.strip() or None))
@@ -224,6 +230,7 @@ def _parse_html_table(html: str) -> list[tuple[str, str, str | None]]:
 
 def _parse_json_list(text: str) -> list[tuple[str, str, str | None]]:
     import json
+
     try:
         data = json.loads(text)
     except (json.JSONDecodeError, ValueError):

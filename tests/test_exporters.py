@@ -20,6 +20,7 @@ class TestJsonExporter:
 
     def test_export_json_empty_devices(self, temp_dir):
         from network_inventory.models import ScanResult
+
         result = ScanResult.start("10.0.0.0/24")
         path = temp_dir / "empty.json"
         export_json(result, path)
@@ -42,6 +43,7 @@ class TestCsvExporter:
 
     def test_export_csv_empty(self, temp_dir):
         from network_inventory.models import ScanResult
+
         result = ScanResult.start("10.0.0.0/24")
         path = temp_dir / "empty.csv"
         export_csv(result, path)
@@ -63,7 +65,9 @@ class TestHtmlExporter:
         assert "192.168.1.0/24" in content
         assert "Router" in content
 
-    def test_export_html_with_extra_data(self, sample_scan_result, sample_wifi, sample_bluetooth, temp_dir):
+    def test_export_html_with_extra_data(
+        self, sample_scan_result, sample_wifi, sample_bluetooth, temp_dir
+    ):
         sample_scan_result.wifi_networks = sample_wifi
         sample_scan_result.bluetooth_devices = sample_bluetooth
         path = temp_dir / "full.html"

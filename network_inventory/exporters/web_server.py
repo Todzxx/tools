@@ -259,7 +259,10 @@ class _Handler(BaseHTTPRequestHandler):
             changed = []
             for k in a_keys & b_keys:
                 a, b = a_map[k], b_map[k]
-                if any(a.get(f) != b.get(f) for f in ("ip_address", "hostname", "device_type", "vendor")):
+                if any(
+                    a.get(f) != b.get(f)
+                    for f in ("ip_address", "hostname", "device_type", "vendor")
+                ):
                     changed.append({"before": a, "after": b})
 
             return {"new": new_devs, "removed": removed_devs, "changed": changed}
@@ -271,11 +274,17 @@ class _Handler(BaseHTTPRequestHandler):
             if self.path in ("/", "/index.html"):
                 return self._send_html()
             if self.path == "/api/all":
-                return self._send_json({
-                    "devices": self._query("SELECT * FROM devices ORDER BY last_seen DESC"),
-                    "scans": self._query("SELECT * FROM scans ORDER BY started_at DESC LIMIT 20"),
-                    "diff": self._diff(),
-                })
+                return self._send_json(
+                    {
+                        "devices": self._query(
+                            "SELECT * FROM devices ORDER BY last_seen DESC"
+                        ),
+                        "scans": self._query(
+                            "SELECT * FROM scans ORDER BY started_at DESC LIMIT 20"
+                        ),
+                        "diff": self._diff(),
+                    }
+                )
             self._send_error("Not found", 404)
         except Exception as e:
             self._send_error(str(e))

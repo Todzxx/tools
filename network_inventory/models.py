@@ -89,7 +89,9 @@ class ScanResult(BaseModel):
 
     @classmethod
     def start(cls, target: str) -> "ScanResult":
-        return cls(target=target, started_at=datetime.now().isoformat(timespec="seconds"))
+        return cls(
+            target=target, started_at=datetime.now().isoformat(timespec="seconds")
+        )
 
     def finish(self) -> None:
         self.finished_at = datetime.now().isoformat(timespec="seconds")

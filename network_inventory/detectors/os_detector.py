@@ -11,17 +11,43 @@ from network_inventory.models import DeviceRecord, PortInfo
 # TTL values are the *initial* TTL set by the OS. We observe the remaining TTL
 # after a hop, so we round up to the nearest common initial value.
 TTL_FINGERPRINTS: list[tuple[int, str, str]] = [
-    (255, "Cisco IOS / Solaris",     "Cisco/Solaris"),
+    (255, "Cisco IOS / Solaris", "Cisco/Solaris"),
     (128, "Windows (NT/2000/XP/7+)", "Windows"),
-    (64,  "Linux / macOS / *BSD",    "Linux/Mac"),
-    (60,  "Linux (some distros)",    "Linux"),
-    (32,  "Windows (Win95/98/Me)",   "Windows (Legacy)"),
+    (64, "Linux / macOS / *BSD", "Linux/Mac"),
+    (60, "Linux (some distros)", "Linux"),
+    (32, "Windows (Win95/98/Me)", "Windows (Legacy)"),
 ]
 
-_TTL_INITIAL_CANDIDATES = [255, 254, 253, 252, 251, 250,
-                           128, 127, 126, 125, 124, 123, 122, 121, 120,
-                           64, 63, 62, 61, 60, 59, 58, 57, 56, 55,
-                           32, 31, 30]
+_TTL_INITIAL_CANDIDATES = [
+    255,
+    254,
+    253,
+    252,
+    251,
+    250,
+    128,
+    127,
+    126,
+    125,
+    124,
+    123,
+    122,
+    121,
+    120,
+    64,
+    63,
+    62,
+    61,
+    60,
+    59,
+    58,
+    57,
+    56,
+    55,
+    32,
+    31,
+    30,
+]
 
 
 def _ttl_to_os(ttl: int) -> tuple[str, str] | None:
@@ -45,10 +71,16 @@ def _ttl_to_os(ttl: int) -> tuple[str, str] | None:
 
 # ── Banner-based OS fingerprints ───────────────────────────────────────────────
 _BANNER_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"SSH-2\.0-OpenSSH_[\d.]+[_-]?(ubuntu|debian)", re.IGNORECASE), "Linux (Ubuntu/Debian)"),
+    (
+        re.compile(r"SSH-2\.0-OpenSSH_[\d.]+[_-]?(ubuntu|debian)", re.IGNORECASE),
+        "Linux (Ubuntu/Debian)",
+    ),
     (re.compile(r"SSH-2\.0-OpenSSH_[\d.]+[_-]?(freebsd)", re.IGNORECASE), "FreeBSD"),
     (re.compile(r"SSH-2\.0-OpenSSH_[\d.]+", re.IGNORECASE), "Linux/Unix (OpenSSH)"),
-    (re.compile(r"SSH-2\.0-OpenSSH_for_Windows_[\d.]+", re.IGNORECASE), "Windows (OpenSSH)"),
+    (
+        re.compile(r"SSH-2\.0-OpenSSH_for_Windows_[\d.]+", re.IGNORECASE),
+        "Windows (OpenSSH)",
+    ),
     (re.compile(r"SSH-2\.0-dropbear", re.IGNORECASE), "Linux (Dropbear)"),
     (re.compile(r"SSH-2\.0-Cisco", re.IGNORECASE), "Cisco IOS"),
     (re.compile(r"Apache/2\.4\.\d+ \(Ubuntu\)", re.IGNORECASE), "Linux (Ubuntu)"),
@@ -192,6 +224,7 @@ def infer_os_family(device: DeviceRecord) -> str | None:
 
 
 # ── TTL probe via ICMP ────────────────────────────────────────────────────────
+
 
 async def probe_ttl(ip_address: str, logger: logging.Logger) -> int | None:
     """Send ICMP echo request and extract TTL from the reply."""

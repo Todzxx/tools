@@ -10,7 +10,9 @@ from typing import Any
 from network_inventory.models import TLSCertificateInfo
 
 
-def _extract_common_name(subject: tuple[tuple[tuple[str, str], ...], ...]) -> str | None:
+def _extract_common_name(
+    subject: tuple[tuple[tuple[str, str], ...], ...],
+) -> str | None:
     for relative_distinguished_name in subject:
         for key, value in relative_distinguished_name:
             if key == "commonName":
@@ -27,7 +29,9 @@ def _issuer_to_text(issuer: tuple[tuple[tuple[str, str], ...], ...]) -> str | No
     return ", ".join(parts) if parts else None
 
 
-def _fetch_tls_certificate(host: str, port: int, timeout: float) -> TLSCertificateInfo | None:
+def _fetch_tls_certificate(
+    host: str, port: int, timeout: float
+) -> TLSCertificateInfo | None:
     context = ssl.create_default_context()
     with socket.create_connection((host, port), timeout=timeout) as raw_socket:
         with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
@@ -51,9 +55,10 @@ def _fetch_tls_certificate(host: str, port: int, timeout: float) -> TLSCertifica
     )
 
 
-async def fetch_tls_certificate(host: str, port: int = 443, timeout: float = 3.0) -> TLSCertificateInfo | None:
+async def fetch_tls_certificate(
+    host: str, port: int = 443, timeout: float = 3.0
+) -> TLSCertificateInfo | None:
     try:
         return await asyncio.to_thread(_fetch_tls_certificate, host, port, timeout)
     except (OSError, ssl.SSLError, TimeoutError):
         return None
-

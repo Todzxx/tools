@@ -18,8 +18,16 @@ class TestScanDatabase:
 
         result = ScanResult.start("192.168.1.0/24")
         result.devices = [
-            DeviceRecord(ip_address="192.168.1.1", mac_address="11:22:33:44:55:66", device_type="Router"),
-            DeviceRecord(ip_address="192.168.1.100", mac_address="AA:BB:CC:DD:EE:FF", device_type="Desktop"),
+            DeviceRecord(
+                ip_address="192.168.1.1",
+                mac_address="11:22:33:44:55:66",
+                device_type="Router",
+            ),
+            DeviceRecord(
+                ip_address="192.168.1.100",
+                mac_address="AA:BB:CC:DD:EE:FF",
+                device_type="Desktop",
+            ),
         ]
         result.finish()
 
@@ -42,7 +50,13 @@ class TestScanDatabase:
 
         for i in range(3):
             result = ScanResult.start(f"10.0.{i}.0/24")
-            result.devices = [DeviceRecord(ip_address=f"10.0.{i}.1", mac_address=f"AA:BB:CC:DD:EE:0{i}", device_type="Desktop")]
+            result.devices = [
+                DeviceRecord(
+                    ip_address=f"10.0.{i}.1",
+                    mac_address=f"AA:BB:CC:DD:EE:0{i}",
+                    device_type="Desktop",
+                )
+            ]
             result.finish()
             db.save_scan(result)
 
@@ -82,8 +96,8 @@ class TestScanDatabase:
 
         db.close()
 
-    def test_get_new_since(self, temp_dir):
-        db_path = str(temp_dir / "new_since.db")
+    def test_get_all_devices(self, temp_dir):
+        db_path = str(temp_dir / "all_devices.db")
         db = ScanDatabase(db_path)
         db.open()
 
@@ -92,7 +106,7 @@ class TestScanDatabase:
         result.finish()
         db.save_scan(result)
 
-        new = db.get_new_since("2000-01-01")
-        assert len(new) >= 1
+        devices = db.get_all_devices()
+        assert len(devices) >= 1
 
         db.close()

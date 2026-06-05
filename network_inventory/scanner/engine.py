@@ -11,7 +11,13 @@ from urllib.parse import urlparse
 from network_inventory.detectors.device_classifier import classify_device
 from network_inventory.detectors.os_detector import infer_os_family, probe_ttl
 from network_inventory.detectors.vendor_detector import VendorDetector
-from network_inventory.models import DeviceRecord, MdnsService, OnvifDevice, ScanResult, SsdpDevice
+from network_inventory.models import (
+    DeviceRecord,
+    MdnsService,
+    OnvifDevice,
+    ScanResult,
+    SsdpDevice,
+)
 from network_inventory.scanner.arp_scanner import arp_scan, tcp_sweep, icmp_ping
 from network_inventory.scanner.ipv6_scanner import discover_ipv6_neighbors
 from network_inventory.scanner.nmap_scanner import discover_hosts as nmap_discover
@@ -41,34 +47,43 @@ class ProgressReporter(Protocol):
 class ScannerEngine:
     """Professional scanning engine that orchestrates multiple discovery methods."""
 
-    def __init__(self, logger: logging.Logger, progress: ProgressReporter | None = None):
+    def __init__(
+        self, logger: logging.Logger, progress: ProgressReporter | None = None
+    ):
         self.logger = logger
         self.progress = progress
         self.vendor_detector = VendorDetector(logger)
 
-    def validate_target(self, raw_target: str, allow_public: bool, max_hosts: int) -> ipaddress.IPv4Network:
+    def validate_target(
+        self, raw_target: str, allow_public: bool, max_hosts: int
+    ) -> ipaddress.IPv4Network:
         try:
             network = ipaddress.ip_network(raw_target, strict=False)
         except ValueError as exc:
             raise ValueError(f"Invalid target: {exc}")
-        
+
         if not isinstance(network, ipaddress.IPv4Network):
             raise ValueError("Only IPv4 CIDR is supported currently.")
-            
-        if not allow_public and not (network.is_private or network.is_link_local or network.is_loopback):
-            raise ValueError("Target must be a private/local network. Use --allow-public if authorized.")
-            
+
+        if not allow_public and not (
+            network.is_private or network.is_link_local or network.is_loopback
+        ):
+            raise ValueError(
+                "Target must be a private/local network. Use --allow-public if authorized."
+            )
+
         if network.num_addresses > max_hosts + 2:
-            raise ValueError(f"Target size ({network.num_addresses}) exceeds safety limit ({max_hosts}).")
-            
+            raise ValueError(
+                f"Target size ({network.num_addresses}) exceeds safety limit ({max_hosts})."
+            )
+
         return network
 
     async def run(self, target: str, options: dict[str, Any]) -> ScanResult:
         """Main execution flow for a complete network scan."""
         allow_public = options.get("allow_public", False)
         max_hosts = options.get("max_hosts", 1024)
-        
-        # Initialize basic stages
+
         if self.progress:
             self.progress.add_stage("arp", "ARP Discovery")
             if options.get("use_nmap"):
@@ -125,7 +140,9 @@ class ScannerEngine:
         # 7. SNMP Discovery
         if options.get("use_snmp"):
             try:
-                await self._step_snmp(devices, options.get("snmp_communities", ["public"]))
+                await self._step_snmp(
+                    devices, options.get("snmp_communities", ["public"])
+                )
             except Exception as e:
                 self.logger.error("SNMP step failed: %s", e)
                 if self.progress:
@@ -156,25 +173,29 @@ class ScannerEngine:
         result.finish()
         return result
 
-    async def _step_snmp(self, devices: dict[str, DeviceRecord], communities: list[str]):
+    async def _step_snmp(
+        self, devices: dict[str, DeviceRecord], communities: list[str]
+    ):
         if not devices:
             return
         if self.progress:
             self.progress.set_info("snmp", "probing SNMP...")
-            
+
         found = await batch_snmp_scan(list(devices.keys()), communities, self.logger)
         for ip, info in found.items():
             dev = devices[ip]
             if info.sys_name:
                 dev.hostname = dev.hostname or info.sys_name
-            
-            note = f"SNMP: {info.sys_descr[:50]}..." if info.sys_descr else "SNMP: active"
+
+            note = (
+                f"SNMP: {info.sys_descr[:50]}..." if info.sys_descr else "SNMP: active"
+            )
             if note not in dev.notes:
                 dev.notes.append(note)
-            
+
             if info.sys_location:
                 dev.notes.append(f"Location: {info.sys_location}")
-                
+
         if self.progress:
             self.progress.set_info("snmp", f"{len(found)} active")
             self.progress.finish_stage("snmp")
@@ -184,7 +205,7 @@ class ScannerEngine:
             return
         if self.progress:
             self.progress.set_info("netbios", "querying names...")
-            
+
         found = await batch_netbios_scan(list(devices.keys()), self.logger)
         for ip, name in found.items():
             dev = devices[ip]
@@ -192,58 +213,74 @@ class ScannerEngine:
             note = f"NetBIOS: {name}"
             if note not in dev.notes:
                 dev.notes.append(note)
-                
+
         if self.progress:
             self.progress.set_info("netbios", f"{len(found)} named")
             self.progress.finish_stage("netbios")
 
-    async def _step_arp(self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]):
+    async def _step_arp(
+        self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]
+    ):
         if self.progress:
             self.progress.set_info("arp", "scanning...")
-        
+
         found = await arp_scan(network, self.vendor_detector, self.logger)
         for dev in found:
             self._merge_device(devices, dev)
-            
+
         if self.progress:
             self.progress.set_info("arp", f"{len(found)} found")
             self.progress.finish_stage("arp")
             self.progress.set_device_count(len(devices))
 
-    async def _step_nmap(self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]):
+    async def _step_nmap(
+        self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]
+    ):
         if self.progress:
             self.progress.set_info("nmap", "fingerprinting...")
-            
+
         found = await nmap_discover(network, self.logger)
         for dev in found:
             self._merge_device(devices, dev)
-            
+
         if self.progress:
             self.progress.set_info("nmap", f"{len(found)} found")
             self.progress.finish_stage("nmap")
 
-    async def _step_dhcp(self, router_ip: str, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord], options: dict[str, Any] | None = None):
+    async def _step_dhcp(
+        self,
+        router_ip: str,
+        network: ipaddress.IPv4Network,
+        devices: dict[str, DeviceRecord],
+        options: dict[str, Any] | None = None,
+    ):
         if self.progress:
             self.progress.set_info("dhcp", f"scraping {router_ip}...")
 
         username = options.get("router_username", "admin") if options else "admin"
         password = options.get("router_password", "admin") if options else "admin"
-        found = await scrape_dhcp_leases(router_ip, self.logger, username=username, password=password)
+        found = await scrape_dhcp_leases(
+            router_ip, self.logger, username=username, password=password
+        )
         for dev in found:
             if ipaddress.ip_address(dev.ip_address) in network:
                 self._merge_device(devices, dev)
                 # Resolve vendor if missing
                 if dev.mac_address and not devices[dev.ip_address].vendor:
-                    devices[dev.ip_address].vendor = await self.vendor_detector.detect(dev.mac_address)
+                    devices[dev.ip_address].vendor = await self.vendor_detector.detect(
+                        dev.mac_address
+                    )
 
         if self.progress:
             self.progress.set_info("dhcp", f"{len(found)} found")
             self.progress.finish_stage("dhcp")
 
-    async def _step_icmp(self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]):
+    async def _step_icmp(
+        self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]
+    ):
         if self.progress:
             self.progress.set_info("icmp", "pinging...")
-            
+
         before = len(devices)
         semaphore = asyncio.Semaphore(128)
 
@@ -255,46 +292,53 @@ class ScannerEngine:
                     devices[ip] = DeviceRecord(ip_address=ip)
 
         await asyncio.gather(*(probe(str(h)) for h in network.hosts()))
-        
+
         if self.progress:
             self.progress.set_info("icmp", f"{len(devices) - before} new")
             self.progress.finish_stage("icmp")
 
-    async def _step_tcp(self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]):
+    async def _step_tcp(
+        self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]
+    ):
         if self.progress:
             self.progress.set_info("tcp", "probing ports...")
-            
+
         known_ips = set(devices.keys())
         found_ips = await tcp_sweep(network, known_ips, self.logger)
-        
+
         new_count = 0
         for ip in found_ips:
             if ip not in devices:
                 devices[ip] = DeviceRecord(ip_address=ip)
                 new_count += 1
-                
+
         if self.progress:
             self.progress.set_info("tcp", f"{new_count} new")
             self.progress.finish_stage("tcp")
 
-    async def _step_ipv6(self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]):
+    async def _step_ipv6(
+        self, network: ipaddress.IPv4Network, devices: dict[str, DeviceRecord]
+    ):
         if self.progress:
             self.progress.set_info("ipv6", "reading ND cache...")
-            
+
         found = await discover_ipv6_neighbors(self.logger, str(network))
         new_count = 0
         for nd in found:
             # Merge by MAC if possible
             existing = None
             if nd.mac_address:
-                existing = next((d for d in devices.values() if d.mac_address == nd.mac_address), None)
-            
+                existing = next(
+                    (d for d in devices.values() if d.mac_address == nd.mac_address),
+                    None,
+                )
+
             if existing:
                 existing.ipv6_address = existing.ipv6_address or nd.ipv6_address
             elif nd.ip_address not in devices:
                 devices[nd.ip_address] = nd
                 new_count += 1
-                
+
         if self.progress:
             self.progress.set_info("ipv6", f"{new_count} new")
             self.progress.finish_stage("ipv6")
@@ -302,7 +346,7 @@ class ScannerEngine:
     async def _step_passive(self, result: ScanResult, devices: dict[str, DeviceRecord]):
         if self.progress:
             self.progress.set_info("passive", "listening...")
-            
+
         tasks = {
             "ssdp": asyncio.create_task(discover_ssdp(self.logger)),
             "mdns": asyncio.create_task(discover_mdns(self.logger)),
@@ -310,15 +354,17 @@ class ScannerEngine:
             "wifi": asyncio.create_task(scan_wifi(self.logger)),
             "bluetooth": asyncio.create_task(discover_bluetooth(self.logger)),
         }
-        
+
         result.ssdp_devices = await tasks["ssdp"]
         result.mdns_services = await tasks["mdns"]
         result.onvif_devices = await tasks["onvif"]
         result.wifi_networks = await tasks["wifi"]
         result.bluetooth_devices = await tasks["bluetooth"]
-        
-        self._attach_discovery_notes(devices, result.ssdp_devices, result.mdns_services, result.onvif_devices)
-        
+
+        self._attach_discovery_notes(
+            devices, result.ssdp_devices, result.mdns_services, result.onvif_devices
+        )
+
         if self.progress:
             self.progress.set_info("passive", f"{len(devices)} total")
             self.progress.finish_stage("passive")
@@ -326,30 +372,38 @@ class ScannerEngine:
     async def _step_enrich(self, devices: dict[str, DeviceRecord], timeout: float):
         if not devices:
             return
-        
+
         if self.progress:
             self.progress.add_stage("enrich", "Enrichment", total=len(devices))
-            
+
         semaphore = asyncio.Semaphore(64)
-        
+
         async def enrich_one(device: DeviceRecord):
             async with semaphore:
                 # DNS, Ports, TTL, OS, TLS
-                hostname_task = asyncio.create_task(reverse_dns_lookup(device.ip_address))
-                ports_task = asyncio.create_task(scan_common_ports(device.ip_address, self.logger, timeout=timeout))
-                ttl_task = asyncio.create_task(probe_ttl(device.ip_address, self.logger))
-                
+                hostname_task = asyncio.create_task(
+                    reverse_dns_lookup(device.ip_address)
+                )
+                ports_task = asyncio.create_task(
+                    scan_common_ports(device.ip_address, self.logger, timeout=timeout)
+                )
+                ttl_task = asyncio.create_task(
+                    probe_ttl(device.ip_address, self.logger)
+                )
+
                 device.hostname = await hostname_task
                 ports = await ports_task
                 device.ttl = await ttl_task
                 device.open_ports = [enrich_service(p) for p in ports]
-                
+
                 if any(p.port == 443 for p in device.open_ports):
-                    device.tls = await fetch_tls_certificate(device.ip_address, 443, timeout=timeout + 1.0)
-                
+                    device.tls = await fetch_tls_certificate(
+                        device.ip_address, 443, timeout=timeout + 1.0
+                    )
+
                 device.device_type = classify_device(device)
                 device.os_family = infer_os_family(device)
-                
+
                 if self.progress:
                     self.progress.update_progress("enrich")
 
@@ -365,15 +419,22 @@ class ScannerEngine:
         else:
             devices[new_dev.ip_address] = new_dev
 
-    def _attach_discovery_notes(self, devices: dict[str, DeviceRecord], 
-                               ssdp: list[SsdpDevice], mdns: list[MdnsService], onvif: list[OnvifDevice]):
+    def _attach_discovery_notes(
+        self,
+        devices: dict[str, DeviceRecord],
+        ssdp: list[SsdpDevice],
+        mdns: list[MdnsService],
+        onvif: list[OnvifDevice],
+    ):
         # mDNS - HP dan IoT biasanya muncul di sini
         for srv in mdns:
             for addr in srv.addresses:
                 # Jika perangkat belum ada di list utama, masukkan!
                 if addr not in devices:
-                    devices[addr] = DeviceRecord(ip_address=addr, hostname=srv.server or srv.name)
-                
+                    devices[addr] = DeviceRecord(
+                        ip_address=addr, hostname=srv.server or srv.name
+                    )
+
                 dev = devices[addr]
                 note = f"mDNS: {srv.name} ({srv.service_type})"
                 if note not in dev.notes:
@@ -422,10 +483,21 @@ class ScannerEngine:
         try:
             if platform.system() == "Windows":
                 # Windows ping doesn't support broadcast well, so we ping a few likely IPs
-                ips_to_poke = [str(network.network_address + i) for i in [1, 2, 5, 10, 254]]
-                tasks = [asyncio.to_thread(subprocess.run, ["ping", "-n", "1", "-w", "200", ip], capture_output=True) for ip in ips_to_poke]
+                ips_to_poke = [
+                    str(network.network_address + i) for i in [1, 2, 5, 10, 254]
+                ]
+                tasks = [
+                    asyncio.to_thread(
+                        subprocess.run,
+                        ["ping", "-n", "1", "-w", "200", ip],
+                        capture_output=True,
+                    )
+                    for ip in ips_to_poke
+                ]
                 await asyncio.gather(*tasks)
             else:
-                subprocess.run(["ping", "-b", "-c", "1", "-W", "1", broadcast], capture_output=True)
-        except Exception:
-            pass
+                subprocess.run(
+                    ["ping", "-b", "-c", "1", "-W", "1", broadcast], capture_output=True
+                )
+        except Exception as exc:
+            self.logger.debug("Warm-up ping failed: %s", exc)

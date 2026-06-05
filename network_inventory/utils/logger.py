@@ -25,4 +25,3 @@ def setup_logger() -> logging.Logger:
     logger.addHandler(console_handler)
 
     return logger
-

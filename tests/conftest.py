@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
 
 from network_inventory.models import (
-    BluetoothDevice, DeviceRecord, MdnsService, OnvifDevice,
-    PortInfo, ScanResult, SsdpDevice, TLSCertificateInfo, WifiNetwork,
+    BluetoothDevice,
+    DeviceRecord,
+    MdnsService,
+    OnvifDevice,
+    PortInfo,
+    ScanResult,
+    SsdpDevice,
+    TLSCertificateInfo,
+    WifiNetwork,
 )
 
 
@@ -33,7 +39,9 @@ def sample_device() -> DeviceRecord:
 
 @pytest.fixture
 def sample_port_info() -> PortInfo:
-    return PortInfo(port=80, service="http", open=True, banner="Apache/2.4.41", version="2.4.41")
+    return PortInfo(
+        port=80, service="http", open=True, banner="Apache/2.4.41", version="2.4.41"
+    )
 
 
 @pytest.fixture
@@ -50,8 +58,16 @@ def sample_tls_info() -> TLSCertificateInfo:
 def sample_scan_result() -> ScanResult:
     result = ScanResult.start("192.168.1.0/24")
     result.devices = [
-        DeviceRecord(ip_address="192.168.1.1", mac_address="11:22:33:44:55:66", device_type="Router"),
-        DeviceRecord(ip_address="192.168.1.100", mac_address="AA:BB:CC:DD:EE:FF", device_type="Desktop"),
+        DeviceRecord(
+            ip_address="192.168.1.1",
+            mac_address="11:22:33:44:55:66",
+            device_type="Router",
+        ),
+        DeviceRecord(
+            ip_address="192.168.1.100",
+            mac_address="AA:BB:CC:DD:EE:FF",
+            device_type="Desktop",
+        ),
         DeviceRecord(ip_address="192.168.1.101", device_type="Smartphone"),
     ]
     result.finish()
@@ -101,8 +117,22 @@ def sample_onvif() -> list[OnvifDevice]:
 @pytest.fixture
 def sample_wifi() -> list[WifiNetwork]:
     return [
-        WifiNetwork(ssid="MyWiFi", bssid="AA:BB:CC:11:22:33", channel=6, signal=-45, frequency=2437, encryption="WPA2"),
-        WifiNetwork(ssid="Guest", bssid="AA:BB:CC:44:55:66", channel=11, signal=-60, frequency=2462, encryption="WPA2"),
+        WifiNetwork(
+            ssid="MyWiFi",
+            bssid="AA:BB:CC:11:22:33",
+            channel=6,
+            signal=-45,
+            frequency=2437,
+            encryption="WPA2",
+        ),
+        WifiNetwork(
+            ssid="Guest",
+            bssid="AA:BB:CC:44:55:66",
+            channel=11,
+            signal=-60,
+            frequency=2462,
+            encryption="WPA2",
+        ),
     ]
 
 

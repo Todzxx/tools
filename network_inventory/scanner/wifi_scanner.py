@@ -83,10 +83,19 @@ async def scan_wifi(logger: logging.Logger, timeout: float = 4.0) -> list[WifiNe
             if ssid and ssid in seen_ssids:
                 # Replace if stronger signal
                 for i, net in enumerate(networks):
-                    if net.ssid == ssid and signal is not None and net.signal is not None and signal > net.signal:
+                    if (
+                        net.ssid == ssid
+                        and signal is not None
+                        and net.signal is not None
+                        and signal > net.signal
+                    ):
                         networks[i] = WifiNetwork(
-                            ssid=ssid, bssid=bssid, channel=channel,
-                            signal=signal, frequency=freq, encryption=encryption,
+                            ssid=ssid,
+                            bssid=bssid,
+                            channel=channel,
+                            signal=signal,
+                            frequency=freq,
+                            encryption=encryption,
                         )
                 continue
             if ssid:

@@ -34,9 +34,13 @@ def _device_row(device: DeviceRecord) -> dict[str, str]:
         "hostname": device.hostname or "",
         "device_type": device.device_type,
         "open_ports": ports,
-        "tls_common_name": device.tls.common_name if device.tls and device.tls.common_name else "",
+        "tls_common_name": device.tls.common_name
+        if device.tls and device.tls.common_name
+        else "",
         "tls_issuer": device.tls.issuer if device.tls and device.tls.issuer else "",
-        "tls_expired": str(device.tls.expired) if device.tls and device.tls.expired is not None else "",
+        "tls_expired": str(device.tls.expired)
+        if device.tls and device.tls.expired is not None
+        else "",
         "notes": "; ".join(device.notes),
     }
 
@@ -48,4 +52,3 @@ def export_csv(result: ScanResult, output_path: Path) -> None:
         writer.writeheader()
         for device in result.devices:
             writer.writerow(_device_row(device))
-

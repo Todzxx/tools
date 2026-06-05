@@ -4,6 +4,7 @@ import os
 import platform
 import ctypes
 
+
 class PermissionChecker:
     """Checks for necessary OS-level permissions (e.g., Administrator/Root)."""
 

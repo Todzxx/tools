@@ -13,7 +13,7 @@ async def reverse_dns_lookup(ip_address: str) -> str | None:
             return hostname.rstrip(".")
         except (socket.herror, socket.gaierror, OSError):
             pass
-        
+
         # Fallback to NetBIOS (nbtstat -A <ip>)
         try:
             output = subprocess.check_output(

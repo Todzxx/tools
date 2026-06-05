@@ -23,10 +23,10 @@ COMMON_PORTS: dict[int, str] = {
     389: "LDAP",
     443: "HTTPS",
     445: "SMB",
-    548: "AFP",           # Apple Filing Protocol → Mac/NAS
-    554: "RTSP",          # CCTV / IP Camera
-    631: "IPP",           # Printer
-    1883: "MQTT",         # IoT broker
+    548: "AFP",  # Apple Filing Protocol → Mac/NAS
+    554: "RTSP",  # CCTV / IP Camera
+    631: "IPP",  # Printer
+    1883: "MQTT",  # IoT broker
     1900: "SSDP",
     3389: "RDP",
     3000: "HTTP-DEV",
@@ -34,7 +34,7 @@ COMMON_PORTS: dict[int, str] = {
     4040: "HTTP-ALT",
     5000: "HTTP-ALT",
     5353: "mDNS",
-    5555: "ADB",          # Android Debug Bridge → Android phone
+    5555: "ADB",  # Android Debug Bridge → Android phone
     5900: "VNC",
     5985: "WinRM",
     6881: "BitTorrent",
@@ -43,11 +43,11 @@ COMMON_PORTS: dict[int, str] = {
     8081: "HTTP-ALT",
     8443: "HTTPS-ALT",
     8888: "HTTP-ALT",
-    9100: "RAW-PRINT",    # Printer (JetDirect)
+    9100: "RAW-PRINT",  # Printer (JetDirect)
     9200: "Elasticsearch",
-    32400: "Plex",        # Plex Media Server
+    32400: "Plex",  # Plex Media Server
     49152: "UPnP",
-    62078: "iPhone-Sync", # Apple iTunes sync → iPhone
+    62078: "iPhone-Sync",  # Apple iTunes sync → iPhone
 }
 
 
@@ -65,7 +65,9 @@ async def scan_common_ports_nmap(
     except ImportError:
         return []
     if not _nmap_binary_available():
-        logger.debug("nmap binary not found in PATH; skipping nmap scan for %s", ip_address)
+        logger.debug(
+            "nmap binary not found in PATH; skipping nmap scan for %s", ip_address
+        )
         return []
 
     def _scan() -> list[PortInfo]:
