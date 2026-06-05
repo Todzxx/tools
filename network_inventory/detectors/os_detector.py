@@ -215,9 +215,9 @@ def infer_os_family(device: DeviceRecord) -> str | None:
 
     # 2. TTL-based
     if device.ttl is not None:
-        result = _ttl_to_os(device.ttl)
-        if result:
-            return result[1]
+        ttl_result = _ttl_to_os(device.ttl)
+        if ttl_result:
+            return ttl_result[1]
 
     # 3. Text-based fallback
     return _infer_os_from_text(device)
@@ -229,7 +229,7 @@ def infer_os_family(device: DeviceRecord) -> str | None:
 async def probe_ttl(ip_address: str, logger: logging.Logger) -> int | None:
     """Send ICMP echo request and extract TTL from the reply."""
     try:
-        from scapy.all import ICMP, IP, sr1  # type: ignore[import]
+        from scapy.all import ICMP, IP, sr1  # type: ignore[attr-defined]
     except ImportError:
         logger.debug("scapy not available; skipping TTL probe for %s", ip_address)
         return None
@@ -238,7 +238,7 @@ async def probe_ttl(ip_address: str, logger: logging.Logger) -> int | None:
         reply = sr1(IP(dst=ip_address) / ICMP(), timeout=2, verbose=False)
         if reply is None:
             return None
-        ttl = reply.ttl  # type: ignore[union-attr]
+        ttl = reply.ttl
         return ttl
 
     try:

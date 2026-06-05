@@ -344,7 +344,7 @@ def map(
     # Fetch devices and target
     devices_data = db.get_all_devices()
 
-    # Heuristic: Pull target from the latest scan entry in the 'scans' table
+    assert db._conn is not None
     scan_row = db._conn.execute(
         "SELECT target FROM scans WHERE id = ?", (last_scan_id,)
     ).fetchone()

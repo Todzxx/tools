@@ -65,7 +65,8 @@ async def discover_mdns(
 
     # Browse for many common service types in parallel
     browsers = [
-        ServiceBrowser(aiozc.zeroconf, srv, listener) for srv in COMMON_SERVICES
+        ServiceBrowser(aiozc.zeroconf, srv, listener)  # type: ignore[arg-type]
+        for srv in COMMON_SERVICES
     ]
 
     await asyncio.sleep(timeout)

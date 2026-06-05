@@ -48,7 +48,7 @@ def _auth_to_encryption(akm: list[int] | None) -> str:
 
 async def scan_wifi(logger: logging.Logger, timeout: float = 4.0) -> list[WifiNetwork]:
     try:
-        import pywifi  # type: ignore[import]
+        import pywifi
     except ImportError:
         logger.warning("pywifi is not installed; skipping Wi-Fi scan")
         return []

@@ -74,13 +74,9 @@ class ScanDatabase:
     # ── Save scan ─────────────────────────────────────────────────────────
 
     def save_scan(self, result: ScanResult) -> tuple[str, list[dict[str, Any]]]:
-        """Save scan results and return (scan_id, changes).
-
-        *changes* contains one dict per device:
-          {"mac": ..., "ip": ..., "action": "new" | "updated" | "ip_changed"}
-        """
         if not self._conn:
             self.open()
+        assert self._conn is not None
 
         scan_id = str(uuid.uuid4())
         changes: list[dict[str, Any]] = []

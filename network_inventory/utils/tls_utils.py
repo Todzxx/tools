@@ -5,7 +5,6 @@ import socket
 import ssl
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-from typing import Any
 
 from network_inventory.models import TLSCertificateInfo
 
@@ -35,7 +34,7 @@ def _fetch_tls_certificate(
     context = ssl.create_default_context()
     with socket.create_connection((host, port), timeout=timeout) as raw_socket:
         with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
-            cert: dict[str, Any] = tls_socket.getpeercert()
+            cert = tls_socket.getpeercert() or {}
 
     expires_raw = cert.get("notAfter")
     expires_at: str | None = None
@@ -48,8 +47,8 @@ def _fetch_tls_certificate(
         expired = expires_dt < datetime.now(timezone.utc)
 
     return TLSCertificateInfo(
-        common_name=_extract_common_name(cert.get("subject", ())),
-        issuer=_issuer_to_text(cert.get("issuer", ())),
+        common_name=_extract_common_name(cert.get("subject", ())),  # type: ignore[arg-type]
+        issuer=_issuer_to_text(cert.get("issuer", ())),  # type: ignore[arg-type]
         expires_at=expires_at,
         expired=expired,
     )

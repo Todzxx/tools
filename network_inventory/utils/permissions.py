@@ -15,7 +15,7 @@ class PermissionChecker:
             if platform.system() == "Windows":
                 return ctypes.windll.shell32.IsUserAnAdmin() != 0
             else:
-                return os.getuid() == 0
+                return os.getuid() == 0  # type: ignore[attr-defined]
         except Exception:
             return False
 

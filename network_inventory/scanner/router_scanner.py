@@ -35,7 +35,7 @@ async def scrape_dhcp_leases(
 
         def _snmp_arp() -> list[tuple[str, str, str | None]]:
             try:
-                from pysnmp.hlapi import (  # type: ignore[import]
+                from pysnmp.hlapi import (
                     CommunityData,
                     ContextData,
                     ObjectType,

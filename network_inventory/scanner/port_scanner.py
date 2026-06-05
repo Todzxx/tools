@@ -61,7 +61,7 @@ async def scan_common_ports_nmap(
     timeout: float = 1.5,
 ) -> list[PortInfo]:
     try:
-        import nmap  # type: ignore[import]
+        import nmap
     except ImportError:
         return []
     if not _nmap_binary_available():

@@ -11,7 +11,7 @@ async def discover_bluetooth(
     logger: logging.Logger, timeout: float = 8.0
 ) -> list[BluetoothDevice]:
     try:
-        from bleak import BleakScanner  # type: ignore[import]
+        from bleak import BleakScanner
     except ImportError:
         logger.warning("bleak is not installed; skipping Bluetooth discovery")
         return []

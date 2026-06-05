@@ -112,7 +112,7 @@ async def arp_scan(
 
     # 1. Attempt Raw Scapy ARP Scan (Most powerful)
     try:
-        from scapy.all import ARP, Ether, srp
+        from scapy.all import ARP, Ether, srp  # type: ignore[attr-defined]
 
         logger.debug("Attempting Raw Scapy ARP scan for %s", target)
 

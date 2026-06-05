@@ -40,7 +40,7 @@ class ProgressReporter(Protocol):
     def set_detail(self, stage: str, detail: str) -> None: ...
     def finish_stage(self, stage: str) -> None: ...
     def set_device_count(self, count: int) -> None: ...
-    def add_stage(self, key: str, label: str, total: int) -> None: ...
+    def add_stage(self, key: str, label: str, total: int = 0) -> None: ...
     def update_progress(self, key: str, advance: int = 1) -> None: ...
 
 
@@ -355,11 +355,11 @@ class ScannerEngine:
             "bluetooth": asyncio.create_task(discover_bluetooth(self.logger)),
         }
 
-        result.ssdp_devices = await tasks["ssdp"]
-        result.mdns_services = await tasks["mdns"]
-        result.onvif_devices = await tasks["onvif"]
-        result.wifi_networks = await tasks["wifi"]
-        result.bluetooth_devices = await tasks["bluetooth"]
+        result.ssdp_devices = await tasks["ssdp"]  # type: ignore[assignment]
+        result.mdns_services = await tasks["mdns"]  # type: ignore[assignment]
+        result.onvif_devices = await tasks["onvif"]  # type: ignore[assignment]
+        result.wifi_networks = await tasks["wifi"]  # type: ignore[assignment]
+        result.bluetooth_devices = await tasks["bluetooth"]  # type: ignore[assignment]
 
         self._attach_discovery_notes(
             devices, result.ssdp_devices, result.mdns_services, result.onvif_devices

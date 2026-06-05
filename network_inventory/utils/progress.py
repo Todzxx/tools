@@ -99,7 +99,7 @@ class ProgressManager:
         )
 
     def get_renderable(self) -> Panel:
-        group_items = [self._overall]
+        group_items: list[Any] = [self._overall]
 
         # Initial stages if none added yet
         if not self._stages:
